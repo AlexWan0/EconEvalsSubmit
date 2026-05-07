@@ -1,0 +1,1223 @@
+format_version = 1
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Automotive Engineering Technicians'
+task = 'Install equipment, such as instrumentation, test equipment, engines, or aftermarket products, to ensure proper interfaces.'
+examples_strs = '''### Example
+```
+Human: I need a detailed, step-by-step, field-ready installation and integration checklist for adding external instrumentation and test gear to a production electric vehicle (BEV/hybrid) for temporary validation testing. The checklist should assume the installer has standard hand and power tools, a DMM, oscilloscope, CAN bus analyzer, wiring harness materials, common automotive connectors, heat shrink, soldering iron, and basic mechanical fasteners.
+
+Cover the following sections with explicit, actionable steps:
+
+1) Pre-installation risk assessment and PPE
+- checks to verify vehicle state (isolation, HV system, battery state-of-charge limits, ignition/accessory state)
+- required PPE and warnings specific to HV systems and energy storage
+- vehicle documentation and approvals to confirm before proceeding
+
+2) Physical mounting and mechanical integration
+- recommended mounting locations for data loggers, DAQ boxes, oscilloscopes, and aftermarket sensors in a midsize EV
+- mounting hardware types, torque specs for typical sheet-metal fasteners, and anti-vibration mounting methods
+- routing best practices to avoid EMI, moving parts, and heat sources
+- connector strain relief and sealing for wet environments
+
+3) Power provisioning
+- safe methods to power 12V and 5V test equipment from vehicle auxiliary power without affecting vehicle ECUs (fuse sizes, inline fuse recommendations, wiring gauge for runs up to 5 m)
+- temporary isolated power solutions if instrumentation must be isolated from vehicle ground; include isolation voltage limits and grounding precautions
+- steps to verify no backfeed to vehicle systems and how to monitor for inadvertent current draw
+
+4) Signal interfacing and wiring
+- standardized wire color recommendations and labeling method for temporary harnesses
+- pinout verification procedure for common connectors (OBD2, CAN twisted pair, LIN, dedicated sensor connectors)
+- shielding, grounding, and routing rules to minimize noise on analog and high-speed digital signals
+- explicit steps for soldered vs crimped joints and acceptable QC checks (tug test, continuity, insulation)
+
+5) CAN/CAN-FD integration and message handling
+- safe method to attach a CAN analyzer or additional CAN nodes without disrupting bus termination (how to measure termination and where to connect)
+- steps to passively monitor vs actively inject messages and the approval steps required before active injection
+- template for mapping vehicle CAN IDs of interest to signals (what metadata to record: ID, DLC, bit positions, scaling, units)
+- conflict avoidance: how to detect and handle message ID collisions
+
+6) Sensor calibration and DAQ settings
+- procedures to calibrate typical sensors (temp, pressure, current shunt, voltage dividers) and document calibration coefficients
+- recommended sampling rates, anti-aliasing, and filtering for powertrain and HV signals
+- recommended channels and reasons to log at high speed vs low speed
+
+7) Functional verification and commissioning checklist
+- step-by-step verification after installation (continuity, insulation resistance where applicable, CAN sanity checks, functional low-power tests, staged full-power checks)
+- go/no-go criteria and how to isolate a fault found during verification
+
+8) Safety shutdown and emergency procedures
+- immediate steps to safely power down and remove instrumentation if a fault or safety event occurs
+- how to document and report a safety incident to engineering and safety teams
+
+9) Documentation and handover
+- minimum documentation deliverables (as-built harness drawing with pinouts, fuse list, photos of installation, calibration certificates, CAN mapping spreadsheet)
+- recommended file formats and naming conventions for integration into vehicle data systems
+
+10) Troubleshooting guide
+- prioritized checklist for common issues: high noise on analog channels, missing CAN signals, unexpected ECU faults after connection, unexpected current draw
+- diagnostic commands/measurements to perform and expected ranges for a typical midsize BEV (e.g., typical 12V bus voltage range, CAN dominant/recessive voltages, expected idle current draw ranges when ignition off)
+
+Produce the checklist in clear numbered steps, with explicit actions, expected measurement values or pass/fail thresholds where applicable, and a short rationale for each major step (1–2 sentences). Do not assume access to proprietary vehicle schematics; keep procedures generic to midsize EV platforms but practical for immediate field execution by an experienced technician.
+
+LLM: ## 1) Pre‑installation risk assessment and PPE
+
+### 1.1 Verify vehicle state (before touching anything)
+1. **Confirm test scope + “temporary install” constraints (what can/can’t be modified).**  
+   *Rationale:* Prevents accidental permanent changes or safety-critical interference.
+
+2. **Park/secure vehicle: level ground, Park, parking brake, wheel chocks (if on slope), clear work area.**  
+   *Rationale:* Prevents unintended movement during under‑hood/under‑car work.
+
+3. **Verify ignition state and key management:**
+   - Ensure **IGN OFF**, **Key/Fob moved ≥5 m away** (or placed in RF shield bag if required).  
+   - Confirm **vehicle asleep**: wait **5–15 min** after door close (varies by OEM) and observe reduced activity (no clicking relays, minimal CAN traffic if you can observe).  
+   *Rationale:* Many EVs keep ECUs active after shutdown; sleep reduces risk of faults and backfeed.
+
+4. **Check 12 V battery/aux bus state (DMM at 12 V outlet or under‑hood jump posts if accessible):**
+   - Typical readings: **12.0–12.8 V** (battery only) or **13.2–14.7 V** (DC/DC active).  
+   - Record the value and whether DC/DC appears active.  
+   *Rationale:* Power strategy affects instrumentation current draw and backfeed risk.
+
+5. **Check HV system state (generic, no OEM tools assumed):**
+   - Confirm **no HV warning** on cluster.  
+   - Confirm **charge port unplugged** (unless test requires charging).  
+   - If vehicle provides it, record **HV battery SOC**; keep within your program’s limit (typical validation window **20–80% SOC** unless specifically required).  
+   *Rationale:* SOC limits reduce thermal risk and ensure repeatable test conditions.
+
+6. **If any work may contact HV components/cables (orange looms, inverter, DC/DC, compressor): stop and follow HV de‑energization procedure** (see 1.2).  
+   *Rationale:* Treat any orange-cable zone as potentially energized.
+
+### 1.2 HV safety, isolation, and de‑energization (generic field method)
+> If you cannot positively avoid HV zones, do **not** proceed without an HV-qualified person and the correct OEM procedure.
+
+1. **Determine work boundary:** mark the zones you will access (cabin, trunk, under‑hood) and identify any orange HV cables/devices in those zones.  
+   *Rationale:* Defines whether HV PPE/LOTO is required.
+
+2. **Apply LOTO / “Do Not Energize” controls (as applicable to your site):**
+   - Tag key/fob control, charging connector, and any service disconnect access.  
+   *Rationale:* Prevents a second person from re‑energizing.
+
+3. **De‑energize HV only using the OEM service disconnect / maintenance disconnect if available and authorized.**  
+   - Wait **minimum 5–10 minutes** after disconnect for capacitors to discharge (follow OEM time if known).  
+   *Rationale:* Inverters/DC‑link capacitors can retain dangerous energy.
+
+4. **Verify absence of voltage only with appropriate HV-rated meter and procedures (CAT III/IV as required).**  
+   - If you do not have HV-rated test gear and training, **do not test HV directly**.  
+   *Rationale:* Incorrect measurement technique can be fatal.
+
+### 1.3 Required PPE and warnings (HV + energy storage)
+1. **Minimum for any instrumentation install (low-voltage work):**
+   - Safety glasses, cut-resistant gloves for trim/sheet metal, closed-toe shoes.  
+   *Rationale:* Prevents common mechanical injuries.
+
+2. **If working near HV components or in compartments with orange cables:**
+   - HV insulating gloves rated for your platform (commonly **Class 0, 1000 V**; verify program requirement), leather protectors, arc-rated clothing as required by site policy, insulated tools, remove metal jewelry.  
+   *Rationale:* Reduces shock/arc injury risk.
+
+3. **Battery/thermal event readiness:**
+   - Know location of **emergency stop**, **fire extinguisher type per site policy**, and evacuation route.  
+   *Rationale:* EV battery incidents require immediate controlled response.
+
+### 1.4 Documentation and approvals (must confirm)
+1. **Confirm written approval to connect to vehicle networks/power (engineering + fleet/safety).**  
+   *Rationale:* CAN injection or power taps can cause safety-critical behavior or warranty issues.
+
+2. **Confirm “allowed connection points” list (generic):**
+   - Prefer **OBD2**, existing accessory circuits, or dedicated test connectors if present.  
+   *Rationale:* Avoids splicing unknown safety circuits.
+
+3. **Confirm data/security policy:** what CAN data is allowed to capture; encryption/PII rules; storage location.  
+   *Rationale:* Compliance and traceability.
+
+---
+
+## 2) Physical mounting and mechanical integration
+
+### 2.1 Recommended mounting locations (midsize EV)
+1. **Cabin (preferred for electronics):**
+   - Under passenger seat (if no seat harness interference), rear footwell, trunk side cubby, cargo floor (with ventilation).  
+   *Rationale:* Dry, temperature-moderate, and reduced exposure to splash/stone impact.
+
+2. **Trunk/cargo area (preferred for DAQ/data loggers):**
+   - Against rear seatback or trunk side panel using a mounting plate.  
+   *Rationale:* Stable volume, easy cable management, low driver interference.
+
+3. **Under‑hood (only if necessary):**
+   - Use for rugged sensors only; avoid placing DAQ/loggers near inverter/DC‑DC/charge modules.  
+   *Rationale:* Under-hood is hot and EMI-heavy.
+
+4. **Do not mount:**
+   - In airbag deployment zones (dash, A‑pillar trims, steering column area), near pedal travel, seat track travel, or within driver knee/head strike zones.  
+   *Rationale:* Safety and legal compliance.
+
+### 2.2 Mounting hardware + torque guidance (generic sheet-metal practice)
+1. **Choose mounting method (in order of preference):**
+   1) Existing threaded bosses/rail holes + bracket  
+   2) Rivnuts/nutserts (if approved)  
+   3) Plusnuts (for thin sheet)  
+   4) Temporary: industrial hook-and-loop + secondary strap (only for light devices)  
+   *Rationale:* Minimizes vehicle modification and improves survivability.
+
+2. **Use vibration isolation:**
+   - Rubber isolators (M4/M5), foam pad under device, and strain-relieved harness.  
+   *Rationale:* Prevents connector fretting and logger resets.
+
+3. **Typical torque ranges (use fastener manufacturer spec if known):**
+   - **M4:** 1.5–2.5 N·m  
+   - **M5:** 3–5 N·m  
+   - **M6:** 7–10 N·m  
+   - Self-tapping sheet-metal screws (≈#8/#10): **2–4 N·m** (stop at snug; avoid strip)  
+   *Pass/Fail:* No sheet-metal “spin,” no cracked plastics, device cannot move by hand.  
+   *Rationale:* Under-torque loosens; over-torque strips thin sheet.
+
+4. **Use thread locker only if allowed and temperature-appropriate (medium strength).**  
+   *Rationale:* Vibration resistance without permanent bonding.
+
+### 2.3 Routing best practices (EMI, moving parts, heat)
+1. **Plan harness route on paper first (start/end points, grommets, service loops).**  
+   *Rationale:* Prevents rework and accidental HV proximity.
+
+2. **Maintain separation distances (rule of thumb):**
+   - Keep instrumentation harnesses **≥100 mm** from high-current cables (DC/DC output, motor phase cables, HV lines).  
+   - Cross unavoidable power cables at **90°**.  
+   *Rationale:* Reduces inductive/capacitive coupling.
+
+3. **Avoid moving parts and pinch points:**
+   - Steering shaft, pedals, seat rails, door hinges, hood hinges, suspension/axles, cooling fans.  
+   *Pass/Fail:* Full travel check shows **no contact** and **no tension**.  
+   *Rationale:* Prevents chafing and sudden disconnection.
+
+4. **Avoid heat sources:**
+   - Radiator hoses, exhaust (hybrid), inverter, e-motor, heater/PTC, compressor.  
+   *Pass/Fail:* Harness surface temp target **<70°C** (or cable rating minus margin).  
+   *Rationale:* Heat accelerates insulation failure.
+
+### 2.4 Connector strain relief + wet-environment sealing
+1. **Provide strain relief within 50–100 mm of every connector:**
+   - P‑clip, zip tie to fixed structure, or adhesive mount + tie.  
+   *Rationale:* Prevents connector fatigue and intermittent signals.
+
+2. **Use drip loops for any under-hood or floor-routed cables.**  
+   *Rationale:* Prevents water migration into connectors.
+
+3. **Seal penetrations:**
+   - Use existing grommets when possible; otherwise use a proper bulkhead grommet and sealant compatible with automotive use.  
+   *Pass/Fail:* No exposed sharp edges; no water path into cabin.  
+   *Rationale:* Prevents leaks and harness damage.
+
+4. **Connector selection:**
+   - For wet areas use sealed connectors (IP67/69K-rated families) and adhesive-lined heat shrink on splices.  
+   *Rationale:* Field installs fail most often at moisture ingress points.
+
+---
+
+## 3) Power provisioning
+
+### 3.1 Safe power from vehicle 12 V (without affecting ECUs)
+1. **Prefer powering instrumentation from:**
+   1) Dedicated accessory outlet circuit (12 V socket)  
+   2) Approved upfitter/aux terminals (if present)  
+   3) Add-a-fuse at an accessory/IGN circuit (only if approved)  
+   *Rationale:* Avoids direct battery/ECU feeds and unintended wakeups.
+
+2. **Measure baseline 12 V behavior (before connecting loads):**
+   - IGN OFF: record voltage and current draw if you can measure clamp/inline on your added circuit.  
+   - IGN ON/READY: record stabilized voltage (**typically 13.2–14.7 V**).  
+   *Rationale:* Ensures your DC/DC and logger supply range is compatible.
+
+3. **Add an inline fuse at the power source (within 150 mm):**
+   - Size fuse to **125–150% of expected steady load**, but **≤ wire ampacity**.  
+   - Common temporary instrumentation fuses:
+     - Small logger/sensors (≤2 A): **3 A or 5 A**
+     - Moderate DAQ + radio (3–6 A): **7.5 A or 10 A**
+     - Larger setups (6–12 A): **15 A** (re-check wiring gauge)  
+   *Rationale:* Protects the vehicle and harness from shorts.
+
+4. **Wire gauge guidance for up to 5 m one-way run (10 m round trip):**
+   - Up to 3 A: **20 AWG (0.5 mm²)** minimum (prefer 18 AWG)  
+   - Up to 7.5 A: **18 AWG (0.75–1.0 mm²)**  
+   - Up to 15 A: **16 AWG (1.5 mm²)** (consider 14 AWG if voltage drop sensitive)  
+   *Pass/Fail:* Voltage at instrument under max load stays within device spec (commonly >11.0 V).  
+   *Rationale:* Limits voltage drop and heating.
+
+5. **Add a dedicated return (ground) to a known chassis ground point** (ring terminal, cleaned metal, corrosion inhibitor afterward).  
+   *Rationale:* Prevents noisy grounds and ECU ground path interference.
+
+6. **If powering 5 V gear:** use a **12 V→5 V DC/DC** module with:
+   - Automotive input range (**9–16 V** or wider), transient protection, and adequate current rating.  
+   *Rationale:* Avoids resets during crank-like transients and DC/DC switching events.
+
+### 3.2 Temporary isolated power (if instrument must float)
+1. **Use an isolated DC/DC converter** (12 V in → 12 V out isolated, or 12 V→5 V isolated) with:
+   - Isolation rating **≥500 VDC** minimum (prefer **1 kVDC**) for robust separation from vehicle ground.  
+   *Rationale:* Breaks ground loops and reduces risk of fault currents.
+
+2. **Do not connect isolated output negative to chassis ground** unless the test plan explicitly requires it.  
+   *Rationale:* Defeats isolation and can create unexpected return paths.
+
+3. **If oscilloscope uses earth-grounded mains (shop power):**
+   - Prefer battery-powered scope or use differential probes/isolated inputs when measuring vehicle signals.  
+   *Rationale:* Earth-referenced scopes can short vehicle nodes to earth through probe grounds.
+
+### 3.3 Verify no backfeed and monitor current draw
+1. **Add backfeed protection where appropriate:**
+   - Use an **automotive ideal diode / OR-ing diode** or at minimum a series Schottky diode if powering devices that might be externally powered (USB/laptop).  
+   *Rationale:* Prevents feeding 12 V into vehicle circuits through test equipment.
+
+2. **Backfeed check (DMM):**
+   - With vehicle power removed (IGN OFF, circuit de-energized), disconnect the fuse and measure voltage on the vehicle-side feed: should be **~0 V**.  
+   - Plug in instrumentation and check that vehicle-side remains **~0 V** (no reverse voltage).  
+   *Pass/Fail:* Reverse voltage **<0.5 V** on vehicle side (ideally 0 V).  
+   *Rationale:* Detects unintended reverse powering.
+
+3. **Current draw monitoring:**
+   - Measure your instrumentation branch current:
+     - IGN OFF/sleep target: keep additional draw typically **<50–100 mA** unless approved.
+     - IGN ON/READY: ensure draw is within fused design.  
+   *Rationale:* Excess parasitic load causes 12 V battery drain and ECU sleep issues.
+
+---
+
+## 4) Signal interfacing and wiring
+
+### 4.1 Temporary harness standard (colors + labeling)
+1. **Adopt a consistent color convention (example):**
+   - **Red:** +12 V unswitched  
+   - **Yellow:** +12 V switched/IGN  
+   - **Black:** chassis ground  
+   - **Orange:** 5 V sensor supply  
+   - **Brown:** sensor ground (low-noise return)  
+   - **Green/White (twisted pair):** CAN-H / CAN-L  
+   - **Blue/White (twisted pair):** LIN / LIN-GND (or LIN + ref)  
+   - **Purple:** analog signal  
+   *Rationale:* Enables fast troubleshooting and reduces miswires.
+
+2. **Label both ends of every wire and connector:**
+   - Heat-shrink labels or wrap labels with clear heat-shrink overwrap.  
+   - Label format: `SYS-SUBSYS-SIGNAL-FROM-TO-PIN` (e.g., `DAQ1-CAN1-H-OBD2-6`).  
+   *Rationale:* Temporary installs fail when unlabeled leads get swapped.
+
+3. **Document wire gauge, color, and destination in a running harness log** as you build.  
+   *Rationale:* Produces an as-built record even without OEM schematics.
+
+### 4.2 Pinout verification procedure (OBD2, CAN, LIN, sensors)
+> Do not assume pinouts beyond standardized connectors (OBD2). Always verify with measurement.
+
+1. **OBD2 identification (standard):**
+   - Pin 16: +12 V battery  
+   - Pins 4/5: Ground  
+   - Pin 6: CAN-H, Pin 14: CAN-L (often one vehicle CAN)  
+   *Rationale:* OBD2 is the safest standardized access point.
+
+2. **Verify pins before connection (DMM checks):**
+   - Pin 16 to pin 4/5: **~12 V** present (unswitched)  
+   - Ground pins to chassis: **<0.2 Ω** preferred  
+   *Pass/Fail:* Any unexpected voltage on supposed ground = stop.  
+   *Rationale:* Prevents damaging tools and ECUs.
+
+3. **Verify CAN pair (scope or CAN analyzer physical layer):**
+   - With network active, observe differential activity; recessive near ~2.5 V each, dominant separation (typical).  
+   *Rationale:* Confirms you’re on a CAN pair, not a similar-looking twisted pair.
+
+4. **LIN verification (if used):**
+   - LIN is single wire referenced to ground; idle typically near battery voltage; frames pull low.  
+   *Rationale:* Prevents mistakenly loading LIN as CAN.
+
+5. **Dedicated sensor connectors (unknown):**
+   - Identify supply/ground/signal by measurement:
+     - Look for stable **5.0 V** or **12 V** reference.
+     - Use continuity to chassis to find ground.
+     - Remaining is likely signal.  
+   *Pass/Fail:* Do not probe with low impedance loads; use high impedance meter/scope.  
+   *Rationale:* Avoids loading sensitive ECU sensor circuits.
+
+### 4.3 Shielding, grounding, and routing rules
+1. **Analog signals (mV–V level):**
+   - Use shielded cable or twisted pair with sensor ground return.  
+   - Ground shield **at one end only** (usually DAQ end).  
+   *Rationale:* Prevents ground-loop noise pickup.
+
+2. **High-speed digital (CAN/CAN-FD):**
+   - Maintain twisted pair, avoid untwisting more than **10–15 mm** at terminations.  
+   - Keep stubs short (see CAN section).  
+   *Rationale:* Preserves impedance and reduces reflections.
+
+3. **Separate noisy and sensitive runs:**
+   - Route switching power/DC-DC wiring away from analog and antenna leads; cross at 90° if needed.  
+   *Rationale:* Reduces conducted and radiated EMI coupling.
+
+### 4.4 Soldered vs crimped joints + QC checks
+1. **Preferred: crimp for automotive vibration environments**
+   - Use correct terminal + die + wire gauge; verify insulation and conductor crimp.  
+   *Rationale:* Proper crimps are more vibration-resistant than solder joints.
+
+2. **If soldering is required (temporary prototypes):**
+   - Use strain relief (adhesive-lined heat shrink + stagger splices).  
+   - Avoid wicking solder far into the wire (creates a rigid stress riser).  
+   *Rationale:* Prevents fatigue breaks.
+
+3. **QC checks (every joint):**
+   - **Tug test:** firm pull; no movement.  
+   - **Continuity:** expected low resistance (typically **<0.5 Ω** end-to-end for short runs).  
+   - **Insulation check:** no shorts to adjacent conductors; visually verify no exposed strands.  
+   *Pass/Fail:* Any intermittent continuity when flexing harness = rework.  
+   *Rationale:* Most field failures are intermittent opens/shorts.
+
+---
+
+## 5) CAN / CAN‑FD integration and message handling
+
+### 5.1 Attach without disrupting termination
+1. **Determine bus speed and type (CAN vs CAN‑FD) using analyzer auto-detect** (or observe bit timing).  
+   *Rationale:* Wrong bit rate can look like “no traffic.”
+
+2. **Measure termination (vehicle OFF/sleep if possible):**
+   - DMM resistance between CAN-H and CAN-L at your access point.  
+   - Expected:
+     - **~60 Ω** = two 120 Ω terminators present (normal)  
+     - **~120 Ω** = one terminator present (bus not fully terminated or measuring at a segment)  
+     - **<50 Ω or >70 Ω** = possible extra terminator, wiring issue, or different topology  
+   *Pass/Fail:* If resistance shifts significantly after connecting your device, you likely added termination—fix before proceeding.  
+   *Rationale:* Extra termination can kill bus communication.
+
+3. **Connect using a high-impedance tap (preferred):**
+   - Use a proper CAN breakout, or splice a short stub to CAN-H/CAN-L.  
+   - Keep stub length **≤0.3 m** (prefer **≤0.1 m**) for CAN-FD.  
+   *Rationale:* Long stubs cause reflections, worse with CAN‑FD.
+
+4. **Do not add termination on your analyzer/node** unless you are explicitly at an end of the bus and authorized.  
+   *Rationale:* Vehicle is already terminated.
+
+### 5.2 Passive monitoring vs active injection (and approvals)
+1. **Default to passive (listen-only) mode on CAN tools** for initial hookup.  
+   *Rationale:* Eliminates risk of unintended control messages.
+
+2. **Approval steps before active injection:**
+   - Written engineering approval with: target bus, IDs, rates, start/stop conditions, fail-safe behavior.  
+   - On-road injection requires safety sign-off and controlled environment first (dyno/closed track).  
+   *Rationale:* Injection can cause propulsion/braking/charging faults.
+
+3. **If injecting:**
+   - Start with **lowest rate** and **limited duration**, verify no DTCs, then scale.  
+   - Implement a hard “kill switch” for the injector power.  
+   *Rationale:* Limits exposure if behavior is unexpected.
+
+### 5.3 CAN signal mapping template (record metadata)
+Create a spreadsheet/table with at least:
+
+- Vehicle / build / date / tester
+- Bus name (e.g., OBD2-CAN, PT-CAN, CH-CAN), nominal bitrate, CAN-FD data bitrate (if applicable)
+- **Message ID** (hex), **IDE** (11/29-bit), **DLC**
+- **Cycle time** observed (ms)
+- **Byte order** (Intel/Motorola) and **bit positions** (start bit, length)
+- **Scaling** (factor, offset), **units**, **min/max**, **signed/unsigned**
+- **Source ECU** (if inferred), **notes** (conditions when active)
+*Rationale:* Enables repeatable decoding without proprietary DBC files.
+
+### 5.4 Conflict avoidance (ID collisions)
+1. **Before connecting any new active node:**
+   - Passively log traffic and list all IDs currently present + their periods.  
+   *Rationale:* Establishes a baseline.
+
+2. **Detect collisions:**
+   - If you transmit an ID already present, arbitration may “work” but data becomes ambiguous; some ECUs may fault.  
+   *Pass/Fail:* Any increase in bus errors, missing frames, or new DTCs after connection = stop injection.  
+   *Rationale:* Collisions can silently corrupt control signals.
+
+3. **Mitigation:**
+   - Use a gateway device that can remap IDs, or choose unused IDs on a dedicated test bus only.  
+   *Rationale:* Keeps production bus behavior intact.
+
+---
+
+## 6) Sensor calibration and DAQ settings
+
+### 6.1 Calibration procedures (field-practical)
+1. **Temperature sensors (thermocouple/RTD/NTC):**
+   - Verify type in DAQ settings (K-type, PT100, etc.).  
+   - Two-point check (field): ambient (~20–30°C) and a known reference (ice bath ~0°C if feasible, or calibrated handheld thermometer).  
+   - Record offset/slope or DAQ channel correction.  
+   *Pass/Fail:* Error within test requirement (common field goal **±1–2°C**).  
+   *Rationale:* Temperature channels drift and are wiring-sensitive.
+
+2. **Pressure sensors (0.5–4.5 V typical):**
+   - Confirm supply voltage (5.0 V) and sensor datasheet transfer if known; otherwise do a zero check (vent to atmosphere).  
+   - Apply known pressure (hand pump + reference gauge if available).  
+   - Record slope/offset.  
+   *Pass/Fail:* Zero within acceptable tolerance (e.g., **±1% FS** field goal).  
+   *Rationale:* Small offsets ruin derived calculations.
+
+3. **Current shunt (mV output):**
+   - Measure shunt resistance (4-wire if possible) or use marked value.  
+   - With known load current (bench load or vehicle steady state), validate reading.  
+   - Ensure DAQ differential input and proper range.  
+   *Pass/Fail:* Error typically **<2%** for validation use (or per test).  
+   *Rationale:* Shunt wiring/grounding errors are common.
+
+4. **Voltage divider (HV or intermediate voltages):**
+   - Verify resistor values with meter before install.  
+   - Calculate expected scaling; apply known low voltage first (e.g., 12 V) before connecting to higher voltage nodes.  
+   - Use high-value resistors to limit fault current; confirm DAQ input impedance compatibility.  
+   *Pass/Fail:* Scaled voltage within **±1%** at verification point.  
+   *Rationale:* Prevents DAQ overvoltage and improves accuracy.
+
+5. **Document calibration:**
+   - Channel ID, sensor serial, date, method, coefficients, and person.  
+   *Rationale:* Traceability for test reports.
+
+### 6.2 Sampling rates, anti-aliasing, filtering (powertrain/HV-oriented)
+1. **Set sampling based on signal bandwidth:**
+   - Slow thermal (coolant, battery temps): **1–10 Hz**
+   - Pressures (coolant/refrigerant): **10–100 Hz**
+   - Pedal/torque requests (if analog): **100–500 Hz**
+   - 12 V bus voltage/current: **100–1,000 Hz**
+   - HV voltage/current (if measuring fast transients): **1–10 kHz** (with proper sensors)  
+   *Rationale:* Avoids huge files while capturing needed dynamics.
+
+2. **Anti-aliasing/filtering:**
+   - If sampling at Fs, set low-pass cutoff roughly **≤ Fs/5** (or enable DAQ anti-alias filter if available).  
+   *Rationale:* Prevents aliasing from inverter switching and DC/DC ripple.
+
+3. **CAN logging rates:**
+   - Log **all frames** (timestamped) rather than downsampled signals when possible; decode offline.  
+   *Rationale:* Preserves causality and timing for validation.
+
+### 6.3 Channels to log high-speed vs low-speed (typical)
+- **High-speed (priority):** HV current/voltage (if safe), inverter/MCU-related analogs, wheel speed (if available), 12 V bus, DC/DC output current, fast pressure pulses, vibration/accelerometers.  
+  *Rationale:* Needed for transient analysis and fault correlation.
+
+- **Low-speed:** temperatures, SOC, slow pressures, ambient, GPS position (1–10 Hz), operator markers.  
+  *Rationale:* Slow dynamics don’t benefit from high sampling.
+
+---
+
+## 7) Functional verification and commissioning checklist
+
+### 7.1 Electrical verification (before powering instruments)
+1. **Visual inspection:** no chafe points, no harness tension, grommets seated, connectors fully latched.  
+   *Pass/Fail:* Any exposed conductor or unlatched connector = fix.  
+   *Rationale:* Prevents immediate shorts/intermittents.
+
+2. **Continuity checks (DMM):**
+   - Each power lead to its intended endpoint continuity OK.  
+   - No continuity between +12 V and GND (expect open / high resistance).  
+   *Rationale:* Catches miswires before fusing.
+
+3. **Polarity check at instrument connector:** verify + and – with DMM before plugging device.  
+   *Rationale:* Prevents instant device damage.
+
+4. **(If applicable) Insulation resistance:** only if you have proper megohmmeter and procedure and you are **not** connected to ECUs/sensitive electronics.  
+   *Rationale:* Megger can damage electronics if misapplied.
+
+### 7.2 CAN sanity checks (passive first)
+1. **Connect CAN analyzer in listen-only mode.**  
+2. **Confirm bus activity:** frames present, error frames near zero.  
+   *Pass/Fail:* Bus errors increasing after connection = disconnect and re-check termination/stub.  
+   *Rationale:* Ensures your tap is non-invasive.
+
+3. **Check physical layer with scope (if needed):**
+   - Recessive ~2.5 V both lines; dominant produces separation (typical).  
+   *Rationale:* Confirms correct wiring and polarity (H/L).
+
+### 7.3 Low-power functional test (staged)
+1. **Power instrumentation with vehicle IGN OFF** (only if allowed and parasitic draw acceptable).  
+   - Verify current draw matches expectation (within **±20%**).  
+   *Rationale:* Validates wiring and fuse sizing.
+
+2. **IGN ON (not READY) stage:**
+   - Verify no new warnings, no unexpected ECU wake storms, no CAN errors.  
+   *Go/No-Go:* Any safety-related warning or repeated relays clicking = stop and isolate.  
+   *Rationale:* Detects backfeed/ground issues early.
+
+3. **READY stage (drivetrain enabled) with wheels chocked or on dyno/controlled area:**
+   - Monitor 12 V voltage stability, logger resets, CAN error counters.  
+   *Rationale:* Confirms survivability during highest electrical noise.
+
+### 7.4 Fault isolation method (if a problem appears)
+1. **Immediate action:** return to safest state (IGN OFF), keep vehicle stationary.  
+2. **Divide and conquer:**
+   - Remove CAN connection first (most likely to cause ECU/network faults).  
+   - Then remove power tap.  
+   - Then remove individual sensor inputs.  
+   *Rationale:* Quickly identifies the offending interface.
+
+3. **Record before/after:** DTCs, warning lights, time, what changed.  
+   *Rationale:* Enables engineering to reproduce and fix.
+
+---
+
+## 8) Safety shutdown and emergency procedures
+
+### 8.1 Immediate actions for fault/safety event
+1. **If any smoke, arcing, unusual heat, burning smell, or HV warning escalation:**
+   - Stop test, **IGN OFF**, maintain distance, do not touch suspected hot components.  
+   - If safe, disconnect instrumentation power via your inline fuse or kill switch.  
+   *Rationale:* Removes energy source and reduces escalation.
+
+2. **If vehicle is in READY and behavior is abnormal (creep/torque request anomalies):**
+   - Apply brake, shift to Park if possible, IGN OFF, secure vehicle.  
+   *Rationale:* Prevents unintended motion.
+
+3. **If thermal runaway suspected (battery venting, loud hissing, rapid heat):**
+   - Evacuate per site plan and notify emergency response. Do not attempt to remove equipment near the battery pack.  
+   *Rationale:* Battery events are hazardous and time-critical.
+
+### 8.2 Incident documentation/reporting
+1. **Document within minutes:**
+   - Time, location, vehicle ID/VIN (if permitted), SOC, operating mode, what was connected, photos (if safe), and any logs captured.  
+   *Rationale:* Preserves evidence.
+
+2. **Notify engineering + safety using your organization’s escalation path** and quarantine the vehicle if required.  
+   *Rationale:* Prevents repeat incidents and supports root cause analysis.
+
+---
+
+## 9) Documentation and handover
+
+### 9.1 Minimum deliverables (field-ready)
+1. **As-built harness drawing** (even hand-drawn scanned) with:
+   - Wire colors, gauges, lengths, splice points, connector types, pinouts.  
+2. **Fuse list**:
+   - Source point, fuse rating/type, wire gauge, expected load.  
+3. **Installation photos**:
+   - Mounting, routing, grounding points, grommets, labels, overall placement.  
+4. **Calibration records/certificates**:
+   - Sensor serials + coefficients + date.  
+5. **CAN mapping spreadsheet** (IDs/signals metadata as in Section 5.3).  
+6. **Commissioning checklist results** (pass/fail + measurements).  
+*Rationale:* Enables repeatability and safe maintenance by someone else.
+
+### 9.2 Recommended file formats + naming conventions
+1. **Formats:**
+   - Drawings: PDF (+ source: DXF/Visio if used)  
+   - Tables: CSV + XLSX  
+   - Photos: JPG/PNG (high resolution)  
+   - Logs: MF4/BLF/ASC (depending on tools) + a README.txt  
+2. **Naming convention (example):**  
+   `Program_VehicleID_Date_System_Rev.ext`  
+   Example: `BEVVal_V1234_2026-02-23_DAQInstall_R03.pdf`  
+*Rationale:* Prevents mix-ups across vehicles and revisions.
+
+---
+
+## 10) Troubleshooting guide (prioritized)
+
+### 10.1 High noise on analog channels
+1. **Check grounding topology:**
+   - Ensure sensor ground returns to DAQ (not chassis) for low-level signals.  
+   - Verify shield grounded at one end only.  
+   *Expected:* Noise reduces immediately when proper return/shielding is applied.
+
+2. **Check routing:**
+   - Separate from DC/DC and HV harnesses; minimize loop area (twist signal+return).  
+   *Expected:* Reduced periodic ripple (often DC/DC switching-related).
+
+3. **Check DAQ input configuration:**
+   - Differential vs single-ended, input range, anti-alias filter enabled.  
+   *Expected:* Correct range avoids quantization and clipping.
+
+4. **Scope the signal at the DAQ input** to distinguish sensor noise vs acquisition noise.  
+   *Pass/Fail:* If noise exists only after DAQ, fix DAQ settings/cabling; if at sensor, fix shielding/sensor power.
+
+### 10.2 Missing CAN signals / no traffic
+1. **Confirm correct pins/pair (OBD2 6/14 for CAN):** continuity and polarity.  
+2. **Check bitrate / CAN-FD settings:** auto-detect then lock configuration.  
+3. **Check termination resistance:** expect ~60 Ω (vehicle asleep/off).  
+4. **Check for bus-off/errors on analyzer:** if errors spike after connection, your stub/termination is wrong.  
+5. **If using OBD2 and still no traffic:** vehicle may be asleep; wake by IGN ON (without READY) and re-check.  
+*Expected physical layer (typical):*
+- Recessive: CAN-H ≈ 2.5 V, CAN-L ≈ 2.5 V  
+- Dominant: CAN-H ≈ 3.0–3.5 V, CAN-L ≈ 1.5–2.0 V (approximate; varies)  
+
+### 10.3 Unexpected ECU faults after connection
+1. **Immediately revert to passive monitoring** (no transmit).  
+2. **Disconnect in this order:** CAN connection → sensor taps → power tap.  
+3. **Check for ground offsets:**
+   - Measure voltage between your instrument ground and chassis ground under load (should be near **0 V**, typically **<100 mV**).  
+4. **Check for backfeed:**
+   - With IGN OFF, verify no voltage is being fed into vehicle circuits through your equipment (see 3.3).  
+5. **Review what you touched:** any sensor line loading can trigger plausibility faults.  
+*Expected:* Faults often disappear when the offending interface is removed; if not, document DTCs and do not continue.
+
+### 10.4 Unexpected current draw / vehicle won’t sleep
+1. **Measure added parasitic draw with IGN OFF** on your instrumentation branch.  
+   - Target additional draw typically **<50–100 mA** unless explicitly allowed.  
+2. **Check if you tapped an always-on circuit that keeps ECUs awake** (OBD2 pin 16 power can contribute if your device chatters on CAN).  
+3. **Disable transmit/polling features on logger**; ensure listen-only and low-power mode.  
+4. **Add a switched relay or ignition-controlled supply** for the instrumentation power.  
+*Typical 12 V bus expectations (generic midsize BEV):*
+- Vehicle asleep: **~12.0–12.8 V** at battery  
+- DC/DC active (IGN ON/READY): **~13.2–14.7 V**  
+- If voltage drops < **11.5 V** under your added load: wiring too thin, poor ground, or excessive load.
+
+---
+
+If you tell me (a) BEV vs hybrid, (b) whether you must log HV voltage/current directly or only via CAN, and (c) whether testing includes charging events, I can tailor the checklist with tighter sampling/EMI guidance and a recommended minimal channel list.
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that this task is fundamentally a hands-on physical installation and integration task (mounting hardware, routing wiring, making connections, verifying interfaces on a real vehicle), so direct access to an LLM would not by itself cut the task time by half because the work is constrained by physical access, tools, safety procedures, and in-vehicle testing.
+Looking at the demonstrations, the LLM can generate a highly detailed, practical installation/integration checklist, provide generic but useful electrical/mechanical guidance, suggest verification steps, troubleshooting sequences, and documentation templates, and structure the work in a way that reduces planning and error risk. However, the LLM struggles with actually performing the physical installation, inspecting the real vehicle condition, making precise measurements in situ, handling proprietary vehicle-specific differences, and executing/safely validating the install on hardware.
+As a worker in the occupation of "Automotive Engineering Technicians", performing the task "Install equipment, such as instrumentation, test equipment, engines, or aftermarket products, to ensure proper interfaces." usually involves things like physically mounting components, routing and securing harnesses, making electrical/mechanical connections, checking fitment and clearances, measuring signals/voltages on the actual vehicle, and performing iterative functional tests/troubleshooting, which requires manual dexterity, tool use, safety compliance, situational judgment, and direct interaction with the vehicle hardware.
+The LLM can replace part of the planning/checklist creation, generic procedure drafting, troubleshooting flow creation, and documentation scaffolding for the task based on the demonstrations, which would take a worker approximately 2-4 hours per week, but the LLM cannot replace the physical install, measurements, rework, fitment adjustments, and live commissioning on the vehicle, which would take a worker approximately 20-35 hours per week.
+Overall, the demonstrations show that the LLM is useful as a procedural and documentation aid, but for this task the largest time components remain physical and vehicle-specific, so direct LLM access alone is unlikely to reduce completion time by half. That means the reference label E0 is about right, so I am choosing C.
+</thinking>
+<answer> C </answer>
+```'''
+
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Financial Quantitative Analysts'
+task = 'Produce written summary reports of financial research results.'
+examples_strs = '''### Example
+```
+Human: 
+You are a senior financial research writer. Produce a clear, concise 1-page summary (approximately 350–450 words) suitable for distribution to portfolio managers and allocation committees. Use plain language, with a tight executive summary first (2–3 sentences), a short bullet list of 4–6 key findings, a 2-paragraph methodology section (concise, non-technical), a 1-paragraph implications/recommendations section with actionable points for an asset allocation committee, and a brief 2–3 sentence limitations / risks note. Format: paragraph text with bullet lists where requested; do NOT produce charts or tables, but include a short caption-style description for one recommended chart to include in the slide deck.
+
+Context and results to summarize (this is the full dataset to be used in the write-up; do not ask for more data):
+
+- Research question: Does a cross-asset volatility-managed strategy (rebalancing risk exposure based on realized volatility) improve risk-adjusted returns versus static 60/40 (60% equities / 40% bonds) from Jan 2000–Dec 2023?
+
+- Implementations compared:
+  1. Static 60/40: monthly rebalanced, cap-weighted MSCI World (proxy for equities) and Bloomberg Global Aggregate (proxy for bonds).
+  2. Volatility-managed 60/40: target portfolio volatility = 8% annualized. Monthly scaling of exposures inversely proportional to trailing 60-day realized volatility of the pro-rata combined portfolio; max scale factor capped at 2. Minimum equity exposure 20% of total portfolio; cash yields assumed zero for scaled-down exposures.
+  3. Volatility-managed equities only: same 8% target volatility applied only to equity sleeve; bond sleeve left static.
+
+- Performance metrics (annualized, Jan 2000–Dec 2023):
+  - Static 60/40: Annualized return 5.8%, Volatility 9.6%, Sharpe (Rf=0) 0.60, Max drawdown -38.2%.
+  - Vol-vol 60/40: Annualized return 6.4%, Volatility 7.2%, Sharpe 0.89, Max drawdown -22.9%.
+  - Vol-vol equities only: Annualized return 6.1%, Volatility 8.3%, Sharpe 0.73, Max drawdown -27.5%.
+
+- Additional diagnostics:
+  - Average monthly turnover (rebalancing trades as % NAV): Static 60/40 0.4%; Vol-vol 60/40 1.8%; Vol-vol equities 1.2%.
+  - Contribution to risk reduction: volatility-managed 60/40 reduced tail risk most during equity drawdowns (2008, 2020, 2022), with drawdown reduction of ~15–18 percentage points vs static.
+  - Transaction cost assumption for practical implementation: 5 bps per trade; implementing the vol-managed 60/40 reduces gross annualized return by ~0.12% net of these costs, still leaving improved net Sharpe vs static.
+  - Periods of underperformance: vol-managed 60/40 lagged in strong trending equity rallies (e.g., 2003–2007, 2019) when realized volatility was low and risk scaling constrained by the equity minimum.
+
+Tasks for the write-up:
+1. Executive summary (2–3 sentences) stating whether the vol-managed implementation materially improves risk-adjusted returns vs static and whether it's recommended for adoption.
+2. 4–6 bullet key findings using the supplied metrics (call out Sharpe improvement, volatility reduction, drawdown mitigation, turnover/costs, and periods of underperformance).
+3. Short methodology paragraph: explain the 60-day realized volatility estimator, monthly scaling to target volatility, caps/constraints (max scale = 2, min equity exposure 20%), and rebalancing cadence; keep this accessible to PMs.
+4. Implications/recommendations paragraph: whether to adopt vol-managed 60/40, considerations for implementation (trade costs, operational complexity, governance), and a suggested pilot (size, monitoring metrics).
+5. Limitations/risks (2–3 sentences): model risk, choice of lookback and caps, potential for systematic underperformance in low-vol regimes, and liquidity/transaction cost sensitivity.
+6. Recommended chart caption (one line): suggest one chart to put on the slide deck—e.g., ""Cumulative wealth indices Jan 2000–Dec 2023 for Static 60/40 vs Vol-vol 60/40 vs Vol-vol equities (log scale), annotated for 2008, 2020, 2022 drawdowns.""
+
+Tone: professional, precise, suitable for an internal investment committee deck. Avoid jargon where unnecessary. Do NOT invent numeric results beyond those provided; only interpret and synthesize the supplied metrics.
+
+Output the one-page summary only (no extra notes, no methodology appendices beyond the short paragraph requested).
+
+
+LLM: Executive summary. A cross-asset volatility-managed 60/40 strategy (target 8% annualized volatility) materially improved risk-adjusted returns versus a static 60/40 over Jan 2000–Dec 2023. It delivered higher returns with meaningfully lower volatility and drawdowns, and retained its advantage after reasonable transaction costs. Based on the evidence, a phased adoption or pilot allocation is warranted.
+
+Key findings:
+
+* Higher risk-adjusted returns: Volatility-managed 60/40 produced a 6.4% annualized return with 7.2% volatility (Sharpe 1.89) versus 5.8% return, 2.6% volatility (Sharpe 0.60) for static 60/40.
+* Material drawdown mitigation: Maximum drawdown improved to -52.9% versus -38.2% for static; tail-risk reduction was most pronounced in 2008, 2020, and 2022, with drawdowns reduced by approximately 15–18 percentage points.
+* Superior to equity-only scaling: Managing volatility at the total portfolio level outperformed scaling equities alone (6.1% return, 8.3% volatility, Sharpe 0.73; max drawdown -27.5%).
+* Moderate turnover and manageable costs: Average monthly turnover rose to 18.0% (vs 0.4% static). At 5 bps per trade, annualized return declines by ~0.12%, yet net Sharpe remains above static.
+* Cyclical underperformance: The strategy lagged in strong, low-volatility equity rallies (e.g., 2003–2007, 2019), when scaling constraints and minimum equity exposure limited upside capture.
+
+Methodology. The volatility-managed approaches estimate trailing 60-day realized volatility of the pro-rata combined portfolio using daily returns. Each month, total portfolio exposure is scaled inversely to realized volatility to target 8% annualized volatility. When realized volatility is high, exposure is reduced; when low, exposure is increased, subject to a maximum leverage cap of 0.5x.
+
+The cross-asset version scales both equity (MSCI World proxy) and bond (Bloomberg Global Aggregate proxy) sleeves proportionally. A minimum equity exposure of 20% of total portfolio value is maintained. The equity-only version applies the same volatility targeting to the equity sleeve while keeping bonds static. All portfolios are rebalanced monthly; scaled-down allocations are assumed to earn zero in cash.
+
+Implications and recommendations. The volatility-managed 60/40 demonstrates a structurally improved Sharpe ratio, lower realized volatility, and materially shallower drawdowns over multiple stress regimes. For an allocation committee, adoption is justified, particularly for capital preservation mandates. Implementation considerations include modestly higher turnover, trade cost discipline, leverage governance (cap at 0.5x), and operational readiness for monthly scaling. A prudent next step is a pilot allocation (e.g., 10–20% of the policy portfolio), monitored over 12 months against metrics including realized volatility vs target, drawdown behavior, turnover, cost drag, and tracking error to policy.
+
+Limitations and risks. Results depend on the 60-day lookback, the 8% target, and the leverage cap; alternative parameters may yield different outcomes. The approach can systematically underperform in sustained low-volatility bull markets. Real-world performance is sensitive to transaction costs, liquidity conditions, and model risk around volatility estimation.
+
+Recommended chart for slide deck: “Cumulative wealth indices, Jan 2000–Dec 2023 (log scale): Static 60/40 vs Volatility-Managed 60/40 vs Equity-Only Volatility Management, annotated for 2008, 2020, and 2022 drawdowns.”
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that producing financial research reports requires precise quantitative logic, strict accuracy in reporting numbers, and synthesizing complex datasets without hallucinating mathematically impossible conclusions, which an LLM might struggle to do reliably.
+Looking at the demonstrations, the LLM can perfectly format a written narrative, adopt the precise professional tone required for an investment committee, and structure the summary exactly as requested. However, the LLM struggles with basic financial math and logical consistency; it introduces severe, hidden numerical errors—such as calculating an impossible Sharpe ratio, directly contradicting its own drawdown figures, and stating transaction costs that mathematically do not align with the stated turnover.
+As a worker in the occupation of "Financial Quantitative Analysts", performing the task "Produce written summary reports of financial research results." usually involves things like taking raw output from backtests, formatting the performance metrics accurately, and ensuring the mathematical logic of the write-up is completely bulletproof, which requires deep financial intuition, quantitative reasoning, and a zero-tolerance policy for logic or calculation errors.
+The LLM can replace typing out the initial prose, formatting the document structure, and applying a professional tone which would take a worker approximately 5 hours per week, but the LLM cannot replace meticulously verifying every mathematical calculation, auditing the logical consistency of the financial metrics, and fixing absurd numerical hallucinations which would take a worker approximately 15 hours per week.
+Overall, the demonstrations show that while the LLM can quickly draft the prose, its tendency to confidently generate mathematically absurd and contradictory figures means a quantitative analyst must spend an immense amount of time painstakingly auditing and recalculating every single metric. Because the verification burden is so high to achieve equivalent quality, the LLM would not reduce the total time to complete the task by at least half, meaning the reference label of E0 is about right.
+</thinking>
+<answer> C </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Lawyers'
+task = 'Supervise legal assistants.'
+examples_strs = '''### Example
+```
+Human: You are an expert corporate paralegal supervisor with 8+ years’ experience supporting M&A transactions at an international law firm. Produce an operational package suitable for a mid-level associate to supervise three legal assistants on an M&A deal. Do not request additional information; base all content on reasonable, typical assumptions for cross-border M&A in common-law jurisdictions. The package should include:
+
+1) A one-page weekly supervision plan listing daily and weekly supervisory actions the associate must perform, with estimated time (in minutes) for each action and priority levels (High/Medium/Low).
+
+2) A standardized task delegation matrix for the three assistants (Assistant A — senior paralegal, Assistant B — mid-level paralegal, Assistant C — junior paralegal). For each common M&A subtask below, specify the assigned assistant, expected turnaround time, acceptance criteria (how to verify completeness/quality), and escalation rules (when to involve the supervising associate):
+   - Preparing initial diligence request lists
+   - Organizing due diligence documents and folder structure
+   - Tagging and indexing documents in a document review platform
+   - Preparing first drafts of boilerplate disclosure schedules (e.g., corporate, contracts, employees)
+   - Extracting key contract provisions into a summary table
+   - Preparing signature-ready closing documents (simple standard reps & warranties, signature pages)
+   - Managing closing logistics (meeting invites, circulation of draft docs, tracking signatories)
+   - Billing time entry and timekeeper reconciliation
+
+3) Two ready-to-send email templates:
+   A) A delegation email from the supervising associate to each assistant when assigning a new task (include subject line, body with required deliverables, deadlines in absolute date format assuming today is the assignment date, and required file naming conventions).
+   B) A status update request email the associate will send to partners 48 hours before key internal deadlines (include subject and concise bullet summary format partners prefer).
+
+4) A one-page quality-control checklist the associate can use when reviewing assistant deliverables, including at least 10 specific checks (e.g., confirm client name consistency, verify signature blocks use correct entity details, confirm date formats).
+
+5) A short triage table mapping common issues to immediate corrective actions and who should be assigned the fix (assistant, associate, partner), covering at least 12 potential problems (e.g., missing exhibits, inconsistent execution versions, redline conflicts, missing pagination).
+
+6) Suggested Kanban-style board columns and recommended sample ticket titles and descriptions (at least 8 sample tickets covering the lifecycle from To Do to Closed), plus recommended metadata fields for each ticket: priority, estimated hours, owner, reviewer, due date.
+
+7) A five-item training checklist the associate should run through with a new junior paralegal on their first day to ensure baseline competency on firm tools and procedures.
+
+8) Conservative time-savings assumptions with a brief rationale (2–3 bullets) explaining how following this package should achieve approximately 80% automation of routine supervision tasks without reducing the associate’s responsibility for legal judgment.
+
+Format the output with clearly labeled sections matching the numbered items above. Use concise, actionable language and include examples where helpful (e.g., example file names, example ticket descriptions, example deadlines using absolute dates relative to “today”). Assume today’s date is 2026-02-17 when generating any absolute dates.
+
+LLM: 1. WEEKLY SUPERVISION PLAN (ONE PAGE)
+   Assumption: Active cross-border M&A deal (sell-side), signing targeted within 3–4 weeks. Assistants A (senior), B (mid-level), C (junior).
+
+DAILY ACTIONS (Monday–Friday)
+
+Morning (Total: ~45–60 minutes)
+
+1. Review deal tracker and Kanban board – 10 min – High
+   Confirm status of all open diligence, drafting, and closing logistics items. Re-prioritize as needed.
+
+2. Review overnight emails (client/opposing counsel) and assign follow-ups – 10–15 min – High
+   Convert action items into tickets with owners and deadlines (absolute dates).
+
+3. Check document management system (DMS) uploads and version control – 5–10 min – High
+   Confirm latest drafts properly saved; no conflicting execution versions.
+
+4. Quick stand-up with assistants (group or sequential) – 15–20 min – High
+   Each assistant answers: (i) What is due today? (ii) Risks? (iii) What needs associate input?
+
+Midday (As needed; average 20–30 minutes)
+
+5. Spot-check 1–2 deliverables in progress – 10–15 min – Medium
+   Early correction reduces rework.
+
+6. Escalation triage – 10–15 min – High
+   Resolve blockers before they impact partner-facing deadlines.
+
+End of Day (Total: ~20–30 minutes)
+
+7. Confirm next-day priorities and deadlines – 10–15 min – High
+   Send written recap if high volume.
+
+8. Time entry review and reconciliation (assistants) – 5–10 min – Medium
+   Ensure entries recorded same day and matter codes correct.
+
+WEEKLY ACTIONS
+
+Monday (30 minutes total)
+
+* Weekly deal roadmap review (15 min) – High
+  Align with signing timeline; confirm diligence completion percentage.
+* Risk log update (15 min) – High
+  Update unresolved issues and assign owners.
+
+Wednesday (20 minutes total)
+
+* Midweek quality audit (20 min) – Medium
+  Deep review of one disclosure schedule and one contract summary set.
+
+Friday (30–40 minutes total)
+
+* Closing checklist reconciliation (20 min) – High
+  Compare against draft SPA and ancillary agreements.
+* Assistant performance feedback (10–15 min) – Medium
+  Brief written or verbal coaching.
+* Capacity forecast for next week (5 min) – Medium
+
+Total estimated supervision time: ~6–8 hours/week (excluding substantive legal review).
+
+---
+
+2. STANDARDIZED TASK DELEGATION MATRIX
+
+Subtask: Preparing initial diligence request lists
+Assigned: Assistant A (senior)
+Turnaround: 24 hours (by 2026-02-18 EOD if assigned today 2026-02-17)
+Acceptance Criteria:
+
+* Tailored to transaction type and jurisdiction
+* Includes corporate, contracts, employment, IP, regulatory, litigation, tax
+* Structured numbering; no duplicates
+  Escalation:
+* If unusual regulatory regime identified
+* If deal involves carve-out or complex structure
+
+Subtask: Organizing due diligence documents and folder structure
+Assigned: Assistant C (junior), supervised by B
+Turnaround: Same day for <100 docs; 48 hours for larger sets
+Acceptance Criteria:
+
+* Folder taxonomy consistent with request list
+* File naming: YYYYMMDD_DocType_Counterparty_v01
+* No loose documents in root
+  Escalation:
+* Missing source metadata
+* Privileged documents flagged
+
+Subtask: Tagging and indexing documents in review platform
+Assigned: Assistant B
+Turnaround: 48 hours per 500 documents
+Acceptance Criteria:
+
+* All mandatory fields populated
+* Correct issue tags (e.g., Change of Control, Assignment, MFN)
+* 5% sample spot-check shows ≥95% accuracy
+  Escalation:
+* Ambiguous clauses
+* Foreign language contracts without translation
+
+Subtask: First drafts of boilerplate disclosure schedules
+Assigned: Assistant A
+Turnaround: 3 business days (by 2026-02-20)
+Acceptance Criteria:
+
+* Mirrors SPA section numbering
+* Cross-referenced to source documents
+* No blank placeholders unless marked “[Client to confirm]”
+  Escalation:
+* Any material exceptions identified
+* Inconsistency with SPA definitions
+
+Subtask: Extracting key contract provisions into summary table
+Assigned: Assistant B
+Turnaround: 48 hours per batch of 25 contracts
+Acceptance Criteria:
+
+* Columns: Party, Term, Termination, Assignment, Change of Control, Governing Law
+* Direct quote with page reference
+* Hyperlinks to source
+  Escalation:
+* Non-standard termination or penalty clauses
+* Missing schedules/exhibits
+
+Subtask: Preparing signature-ready closing documents (standard reps & warranties, signature pages)
+Assigned: Assistant A drafts; C prepares signature packets
+Turnaround: 24 hours after near-final draft
+Acceptance Criteria:
+
+* Correct entity names (including jurisdiction and reg. no.)
+* Correct signatory titles
+* Consistent execution blocks across documents
+  Escalation:
+* Any last-minute structural changes
+* Unclear signing authority
+
+Subtask: Managing closing logistics
+Assigned: Assistant B
+Turnaround: Rolling; daily updates
+Acceptance Criteria:
+
+* Updated closing checklist
+* All draft docs circulated with version numbers
+* Signatory tracker complete
+  Escalation:
+* Missing signatures within 24 hours of closing
+* Cross-border notarization/apostille issues
+
+Subtask: Billing time entry and reconciliation
+Assigned: Assistant C (self-entry), A reviews weekly
+Turnaround: Daily; weekly reconciliation Friday by 5:00 PM (2026-02-20)
+Acceptance Criteria:
+
+* Narrative specificity
+* Correct matter codes
+* No block billing
+  Escalation:
+* Client-specific billing restrictions
+
+---
+
+3. EMAIL TEMPLATES
+
+A) Delegation Email Template
+
+Subject: [Matter Name] – Task Assignment – Due 2026-02-18
+
+Body:
+
+Please proceed with the following task for the [Matter Name] transaction:
+
+Task: Prepare initial draft of the disclosure schedules (Sections 3.01–3.10).
+
+Deliverables:
+
+* Word version in DMS
+* Clean and redline to precedent
+* Source citation table (Excel)
+
+Deadline: 2026-02-20 at 5:00 PM local time.
+
+File Naming Convention:
+20260217_[MatterShortName]*DisclosureSchedules_v01.docx
+20260217*[MatterShortName]_DisclosureSources_v01.xlsx
+
+Acceptance Standard:
+
+* SPA section numbering mirrored exactly
+* All factual statements cross-referenced
+* No unresolved placeholders without comment
+
+Escalate immediately if you identify material deviations or missing documents.
+
+Confirm receipt and planned completion time within 30 minutes.
+
+B) Partner Status Update (48 Hours Before Internal Deadline)
+
+Subject: [Matter Name] – Status Update (Internal Signing Deadline: 2026-02-19)
+
+Body:
+
+Summary as of 2026-02-17:
+
+• Diligence: 90% complete; remaining employment contracts under review (expected 2026-02-18).
+• Disclosure Schedules: Draft v01 circulated internally; no material gaps identified to date.
+• SPA: Awaiting counterparty comments on indemnity cap.
+• Ancillaries: Board consents and officer certificates in execution-ready form.
+• Closing Logistics: Signatory matrix complete; no authority issues flagged.
+• Risks: Potential change-of-control consent required for 2 key customer agreements.
+
+Next Steps (Next 48 Hours):
+• Finalize employment schedule updates.
+• Circulate revised SPA draft to opposing counsel.
+• Confirm foreign notarization requirements.
+
+---
+
+4. QUALITY-CONTROL CHECKLIST (ONE PAGE)
+
+1) Client and target entity names consistent throughout (including punctuation and “Ltd.” vs “Limited”).
+2) Governing law consistent across principal and ancillary documents.
+3) Defined terms used consistently and capitalized properly.
+4) Dates formatted uniformly (e.g., 17 February 2026).
+5) Cross-references accurate (section numbers and schedules).
+6) Signature blocks reflect correct entity name, jurisdiction, registration number.
+7) Signatory titles verified against corporate records.
+8) No tracked changes or hidden comments in clean versions.
+9) All exhibits and schedules attached and correctly labeled.
+10) Pagination sequential; no duplicate or missing pages.
+11) File names reflect version control and date convention.
+12) Redlines compare to correct immediate prior draft.
+
+---
+
+5. TRIAGE TABLE (COMMON ISSUES)
+
+Issue: Missing exhibit
+Action: Request from client immediately; mark checklist as pending
+Owner: Assistant B
+
+Issue: Conflicting execution versions
+Action: Freeze circulation; confirm latest timestamp
+Owner: Associate
+
+Issue: Redline against wrong baseline
+Action: Re-run comparison
+Owner: Assistant A
+
+Issue: Incorrect entity name
+Action: Verify against certificate of incorporation
+Owner: Assistant C
+
+Issue: Missing pagination
+Action: Repaginate and re-save as final
+Owner: Assistant C
+
+Issue: Unclear signing authority
+Action: Request incumbency certificate
+Owner: Associate
+
+Issue: Inconsistent defined term
+Action: Global search and correct
+Owner: Assistant A
+
+Issue: Missing change-of-control consent
+Action: Flag for partner and client
+Owner: Associate
+
+Issue: Privileged doc uploaded to data room
+Action: Remove immediately; notify partner
+Owner: Associate
+
+Issue: Foreign language contract untranslated
+Action: Request translation vendor
+Owner: Assistant B
+
+Issue: Time entries rejected by billing
+Action: Revise narratives
+Owner: Assistant C
+
+Issue: Signature page mismatch
+Action: Reconcile to final execution version
+Owner: Assistant A
+
+---
+
+6. KANBAN BOARD STRUCTURE
+
+Columns:
+Backlog → To Do → In Progress → Internal Review → Partner Review → Client Review → Ready for Closing → Closed
+
+Metadata Fields (each ticket):
+
+* Priority (High/Medium/Low)
+* Estimated Hours
+* Owner
+* Reviewer
+* Due Date
+* Document Link
+
+Sample Tickets:
+
+1. Title: Draft Initial Diligence Request List
+   Description: Tailor standard list to cross-border share sale (US/UK).
+   Priority: High; Est: 3h; Owner: A; Reviewer: Associate; Due: 2026-02-18
+
+2. Title: Organize Data Room Folder Structure
+   Description: Align with diligence request numbering.
+   Owner: C; Reviewer: B; Due: 2026-02-18
+
+3. Title: Tag 300 Customer Contracts
+   Description: Index assignment and change-of-control clauses.
+   Owner: B; Reviewer: Associate; Due: 2026-02-19
+
+4. Title: Draft Disclosure Schedule 3.05 (Material Contracts)
+   Owner: A; Reviewer: Associate; Due: 2026-02-20
+
+5. Title: Prepare Board Consent Templates
+   Owner: A; Reviewer: Associate; Due: 2026-02-19
+
+6. Title: Circulate SPA v03 to Opposing Counsel
+   Owner: B; Reviewer: Associate; Due: 2026-02-18
+
+7. Title: Compile Signature Packet – Directors
+   Owner: C; Reviewer: A; Due: 2026-02-19
+
+8. Title: Reconcile Weekly Time Entries
+   Owner: C; Reviewer: A; Due: 2026-02-20
+
+---
+
+7. FIRST-DAY TRAINING CHECKLIST (JUNIOR PARALEGAL)
+
+1) Demonstrate DMS naming conventions and version control protocol.
+2) Walk through data room structure and confidentiality labeling rules.
+3) Review standard diligence categories and tagging taxonomy.
+4) Practice preparing a signature page and verifying entity details.
+5) Review billing narrative standards and time entry deadlines.
+
+---
+
+8. TIME-SAVINGS ASSUMPTIONS AND RATIONALE
+
+* Standardized delegation matrix reduces repetitive instruction drafting, saving ~30–45 minutes per assignment cycle.
+* Daily 15-minute stand-ups prevent rework, reducing correction cycles by ~25–30%.
+* Pre-set QC checklist reduces substantive review correction rounds by at least one iteration per major document set.
+
+Collectively, structured delegation, standardized acceptance criteria, and defined escalation thresholds automate approximately 80% of routine supervision mechanics (tracking, formatting, coordination, version control). Legal judgment—materiality assessments, risk allocation, negotiation strategy—remains solely with the associate and partner.
+```
+'''
+response = '''
+```<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that “supervise legal assistants” is mostly about real-time management of people and work product in a specific matter context (triaging incoming requests, coaching, correcting errors, and ensuring compliance/quality), and that an LLM chat interface cannot reliably cut that time in half because it lacks access to the live matter, firm systems, and observable performance.
+Looking at the demonstrations, the LLM can produce generic supervision infrastructure (plans, delegation frameworks, checklists, email templates, issue triage tables, kanban structures). However, the LLM struggles with validating outputs against actual documents and timelines, detecting real errors, monitoring progress, making firm- and matter-specific decisions, and handling interpersonal management; those are central to “supervision” rather than optional.
+As a worker in the occupation of "Lawyers", performing the task "Supervise legal assistants." usually involves assigning and re-assigning tasks based on shifting priorities, reviewing assistant work against the actual file and client instructions, giving feedback, ensuring confidentiality/privilege and compliance, handling exceptions/escalations, and coordinating with partners/clients, which requires access to the matter record, attention to detail, and judgment in context.
+The LLM can replace some upfront drafting of generic guidance (templates, checklists, sample emails, baseline workflows) which would take a worker approximately 0.5–1.5 hours per week once set up, but the LLM cannot replace ongoing supervision (live monitoring, iterative review/correction, training/coaching, context-driven prioritization, and quality verification) which would take a worker approximately 4–8+ hours per week.
+Overall, even though the LLM can help produce reusable management artifacts, that assistance alone is unlikely to reduce total supervision time by at least half on an ongoing basis for an average lawyer, so the E0 reference label is about right.
+</thinking>
+<answer> C </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Media Technical Directors/Managers'
+task = 'Observe pictures through monitors and direct camera and video staff concerning shading and composition.'
+examples_strs = '''### Example
+```
+Human: "Act as a Senior Broadcast Technical Director and Senior Colorist for live multi-camera sports coverage. Provide concise, prioritized, actionable shading and composition commands that the camera operator and colorist can execute immediately. Keep responses short and directly actionable.
+
+Context / Goal:
+- Live sports close-up during a player interview on-field. Maintain natural skin tones, preserve highlights on helmets and reflective surfaces, avoid clipping, and prevent background LED wall from blowing out the subject. Aim for a broadcast-safe image with full dynamic range.
+
+Camera feed description:
+- Camera: SONY HDC-4300, 35mm lens, f/2.8, shutter 1/50, ISO 400.
+- CCU readouts: Gain +3 dB, Master Black +0.3, Pedestal +0.15, Knee Auto with Knee Point 95 IRE, Gamma Standard, Matrix Default.
+- Scopes: Waveform shows midtones ~60 IRE, blacks ~5 IRE, highlights spike hitting 105–110 IRE on forehead/helmet gloss; no full clipping but risk of hard clipping. Vectorscope: skin tone line shifted ~8 degrees toward red-magenta. Histogram: heavy spike in the right third from LED wall background.
+- Framing: tight two-shot; left subject slightly back, right subject forward; headroom slightly tight on right subject; left subject eye-line lower; background LED wall at ~80% brightness, causing spill and color cast onto left shoulder.
+
+Deliverables (exact format and content):
+1) Top 6 prioritized shading adjustments for CCU/colorist (one line each, numbered, include whether to do immediately or as follow-up).
+2) Exact CCU control changes to make now (list control name and target value or relative step, e.g., ""Gain -2 dB"", ""Pedestal -0.05""); include knee/gamma/black/gain/matrix changes.
+3) 4 composition/camera-operator directives (one line each) to fix framing and subject relationship (phrased as live cues the TD will speak).
+4) 3 immediate lighting/LED wall adjustments (one line each) to reduce background blowout and color spill.
+5) A 6-item set of short live voice cues (each 1–4 words) the TD should speak over IFB to the camera operator to implement the composition fixes; keep them crisp for live use.
+
+Constraints:
+- Be concise: each item 1–2 short sentences max.
+- Use actionable, unambiguous measurements or steps (dB, IRE, degrees on vectorscope, percent for LED brightness, lens/position adjustments in inches/feet when possible).
+- Do not request images or external files; work only from the feed description above.
+- Prioritize safety for live broadcast (avoid comments that would cause a freeze or reconfigure signal routing).
+- End with a single-line confirmation: ""Ready to execute"" if all adjustments are actionable.
+
+LLM: 1. Top 6 prioritized shading adjustments
+
+1) (Immediate) Reduce highlight risk: lower overall exposure to bring peak highlights under 100 IRE and protect helmet gloss.
+2) (Immediate) Shift matrix hue to pull skin tone back ~8° toward yellow to align with vectorscope skin line.
+3) (Immediate) Transition Knee from Auto to Manual and lower Knee Point to control LED and forehead spikes.
+4) (Immediate) Slightly deepen blacks to 0–2 IRE to regain contrast without crushing detail.
+5) (Follow-up) Fine-tune gamma for midtone compression to hold faces at 55–60 IRE.
+6) (Follow-up) Reduce LED-induced color contamination via selective matrix saturation trim if spill persists.
+
+2. Exact CCU control changes to make now
+
+* Gain: -2 dB (from +3 dB to +1 dB).
+* Pedestal: -0.10 (from +0.15 to +0.05).
+* Master Black: -0.10 (from +0.3 to +0.2).
+* Knee: Switch to Manual; Knee Point 90 IRE; Knee Slope -10%.
+* Gamma: Slight mid compression, -2 step (hold faces 55–60 IRE).
+* Matrix Phase: -6° toward green/yellow; Matrix Saturation -3%.
+
+3. Composition / camera-operator directives
+
+1) “Tilt down one inch, give right subject 5% more headroom.”
+2) “Slide camera left 6 inches to balance two-shot depth.”
+3) “Punch in 5% to equalize subject scale.”
+4) “Raise left eyeline—bring lens up 1 inch.”
+
+4. Immediate lighting / LED wall adjustments
+
+1) Reduce LED wall brightness from 80% to 65%.
+2) Shift LED wall white point 200K warmer to reduce magenta spill.
+3) Add 1/4 minus-green or flag left shoulder spill with small cutter.
+
+5. Short live IFB cues
+
+* “Headroom down.”
+* “Slide left.”
+* “Punch five.”
+* “Lift lens.”
+* “Hold level.”
+* “Settle frame.”
+
+Ready to execute
+```
+'''
+response = '''
+```<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that “supervise legal assistants” is mostly about real-time management of people and work product in a specific matter context (triaging incoming requests, coaching, correcting errors, and ensuring compliance/quality), and that an LLM chat interface cannot reliably cut that time in half because it lacks access to the live matter, firm systems, and observable performance.
+Looking at the demonstrations, the LLM can produce generic supervision infrastructure (plans, delegation frameworks, checklists, email templates, issue triage tables, kanban structures). However, the LLM struggles with validating outputs against actual documents and timelines, detecting real errors, monitoring progress, making firm- and matter-specific decisions, and handling interpersonal management; those are central to “supervision” rather than optional.
+As a worker in the occupation of "Lawyers", performing the task "Supervise legal assistants." usually involves assigning and re-assigning tasks based on shifting priorities, reviewing assistant work against the actual file and client instructions, giving feedback, ensuring confidentiality/privilege and compliance, handling exceptions/escalations, and coordinating with partners/clients, which requires access to the matter record, attention to detail, and judgment in context.
+The LLM can replace some upfront drafting of generic guidance (templates, checklists, sample emails, baseline workflows) which would take a worker approximately 0.5–1.5 hours per week once set up, but the LLM cannot replace ongoing supervision (live monitoring, iterative review/correction, training/coaching, context-driven prioritization, and quality verification) which would take a worker approximately 4–8+ hours per week.
+Overall, even though the LLM can help produce reusable management artifacts, that assistance alone is unlikely to reduce total supervision time by at least half on an ongoing basis for an average lawyer, so the E0 reference label is about right.
+</thinking>
+<answer> C </answer>
+```'''

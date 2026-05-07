@@ -1,0 +1,14 @@
+{
+  "cache_flag": "script_response_generation",
+  "max_tokens": 32000,
+  "model_name": "openai/gpt-4.1-mini",
+  "num_workers": 256,
+  "request_args": {
+    "hash_keys": true,
+    "num_retries": 5,
+    "post_timeout": 300,
+    "total_timeout": 300,
+    "use_cache": true
+  },
+  "temperature": 1.0
+}

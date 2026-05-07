@@ -1,0 +1,15 @@
+{
+  "cache_flag": "script_response_generation",
+  "max_tokens": 32000,
+  "model_name": "together/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+  "num_workers": 16,
+  "request_args": {
+    "hash_keys": true,
+    "num_retries": 5,
+    "post_timeout": 300,
+    "rate_limit_rpm": 60,
+    "total_timeout": 300,
+    "use_cache": true
+  },
+  "temperature": 1.0
+}

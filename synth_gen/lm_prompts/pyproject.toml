@@ -1,0 +1,11 @@
+[tool.poetry]
+name = "lm_prompts"
+version = "1.0.0"
+description = "Typed prompts"
+authors = ["Alex"]
+
+[tool.poetry.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

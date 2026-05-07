@@ -1,0 +1,15 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pytest_cache
+*.env
+.env*
+.vscode
+.idea
+.DS_Store
+*.md
+_d5_input_raw.txt
+_d5_iput.csv
+_parse.ipynb
+*.ipynb

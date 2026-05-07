@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Leaderboard explorer</title>
+    <style>
+      .header-clamp {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+        overflow-wrap: break-word;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <header class="max-w-[84rem] mx-auto px-2 pt-6 pb-2">
+      <h1 class="text-xl font-semibold">
+        <a href="/" class="hover:underline">Leaderboard explorer</a>
+      </h1>
+    </header>
+
+    <div class="max-w-[84rem] mx-auto px-2 pt-2 pb-4">
+      <div class="rounded-lg border border-blue-200 bg-blue-50 text-blue-900 px-3 py-2 text-sm">
+        <h2 class="font-semibold">Data Description</h2>
+        <p>The default leaderboard on the left (Uniform_sample_500) corresponds to model rankings on a randomly sampled set of 500 Wildchat/LMArena instances. The default leaderboards on the right (DWA leaderboards) corresponds to the individual leaderboards for each DWA. You can alternatively select Aggregated_DWA_data to see the leaderboard when all the DWA data is aggregated into a single benchmark.</p>
+
+        <h2 class="font-semibold pt-2">Usage Instructions</h2>
+        <p>Click on rows to track model performance across leaderboards. Hover over the mini-leaderboards to view the full title. Click on the mini-leaderboards to expand and view prompts & model responses (model responses will be displayed for the tracked models).</p>
+      </div>
+    </div>
+
+    <main class="max-w-[84rem] mx-auto px-2 pb-[20rem]">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Left Panel -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 min-w-0">
+          <div class="p-4 flex items-center gap-3 border-b border-gray-100 min-w-0">
+            <label for="left-select" class="text-xs font-medium">LB1</label>
+            <select id="left-select"
+              class="w-0 flex-1 min-w-0 max-w-full overflow-hidden rounded-md border-gray-300 text-xs focus:ring-2 focus:ring-blue-500 p-1">
+              <option value="" disabled selected>Loading...</option>
+            </select>
+          </div>
+          <div id="left-table-container" class="overflow-auto min-w-0 pb-1">
+            <!-- Table renders here -->
+          </div>
+        </section>
+
+        <!-- Right Panel -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 min-w-0">
+          <div class="p-4 flex items-center gap-3 border-b border-gray-100 min-w-0">
+            <label for="right-select" class="text-xs font-medium">LB2</label>
+            <select id="right-select"
+              class="w-0 flex-1 min-w-0 max-w-full overflow-hidden rounded-md border-gray-300 text-xs focus:ring-2 focus:ring-blue-500 p-1">
+              <option value="" disabled selected>Loading...</option>
+            </select>
+          </div>
+          <div id="right-table-container" class="overflow-auto min-w-0 pb-1">
+            <!-- Table renders here -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

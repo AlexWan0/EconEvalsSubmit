@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ee_preds"
+version = "1.0.0"
+description = ""
+authors = ["ABC"]
+
+[tool.poetry.dependencies]
+python = "3.10"
+fast_openai = { path = "../fast_openai", develop = true }
+ee_retrieval = { path = "../retrieval", develop = true }
+pandas = "~=2.2.2"
+typeguard = "^4.4.3"
+orjson = "~=3.10.18"
+tyro = "~=0.9.24"
+dacite = "^1.9.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

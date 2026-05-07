@@ -1,0 +1,11 @@
+{
+    "model_args": {
+        "model_str": "together/Qwen/Qwen3-235B-A22B-Instruct-2507-tput",
+        "max_tokens": 40960,
+        "temperature": 0.0,
+        "num_workers": 32
+    },
+    "request_args": {
+        "rate_limit_rpm": 60
+    }
+}

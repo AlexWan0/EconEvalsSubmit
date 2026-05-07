@@ -1,0 +1,8 @@
+{
+    "model_args": {
+        "model_str": "openai/o3-mini-2025-01-31",
+        "max_tokens": 16384,
+        "temperature": 1.0,
+        "num_workers": 128
+    }
+}

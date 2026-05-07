@@ -1,0 +1,11 @@
+{
+    "model_args": {
+        "model_str": "together/openai/gpt-oss-20b",
+        "max_tokens": 100000,
+        "temperature": 0.0,
+        "num_workers": 16
+    },
+    "request_args": {
+        "rate_limit_rpm": 60
+    }
+}

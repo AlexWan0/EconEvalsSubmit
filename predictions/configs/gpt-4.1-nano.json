@@ -1,0 +1,8 @@
+{
+    "model_args": {
+        "model_str": "openai/gpt-4.1-nano",
+        "max_tokens": 16384,
+        "temperature": 0.0,
+        "num_workers": 128
+    }
+}

@@ -1,0 +1,15 @@
+judge_endpoint:
+  model_str: openai/gpt-4.1-mini
+  max_tokens: 16000
+  temperature: 0.0
+  parallel: 128
+
+bench_name: tutorial
+
+reference: null
+
+regex_patterns:
+  - \[\[([AB<>=]+)\]\]
+  - \[([AB<>=]+)\]
+
+prompt_template: "<|The Start of the Previous Turns|>\n{CONVERSATION_HISTORY}\n<|The End of the Previous Turns|>\n\n<|The Start of the User Prompt|>\n{QUESTION}\n<|The End of the User Prompt|>\n\n<|The Start of Assistant A's Answer|>\n{ANSWER_A}\n<|The End of Assistant A's Answer|>\n\n<|The Start of Assistant B's Answer|>\n{ANSWER_B}\n<|The End of Assistant B's Answer|>"

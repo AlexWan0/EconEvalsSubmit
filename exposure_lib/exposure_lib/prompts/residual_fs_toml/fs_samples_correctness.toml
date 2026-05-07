@@ -1,0 +1,147 @@
+format_version = 1
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Financial Quantitative Analysts'
+task = 'Produce written summary reports of financial research results.'
+examples_strs = '''### Example
+```
+Human: 
+You are a senior financial research writer. Produce a clear, concise 1-page summary (approximately 350–450 words) suitable for distribution to portfolio managers and allocation committees. Use plain language, with a tight executive summary first (2–3 sentences), a short bullet list of 4–6 key findings, a 2-paragraph methodology section (concise, non-technical), a 1-paragraph implications/recommendations section with actionable points for an asset allocation committee, and a brief 2–3 sentence limitations / risks note. Format: paragraph text with bullet lists where requested; do NOT produce charts or tables, but include a short caption-style description for one recommended chart to include in the slide deck.
+
+Context and results to summarize (this is the full dataset to be used in the write-up; do not ask for more data):
+
+- Research question: Does a cross-asset volatility-managed strategy (rebalancing risk exposure based on realized volatility) improve risk-adjusted returns versus static 60/40 (60% equities / 40% bonds) from Jan 2000–Dec 2023?
+
+- Implementations compared:
+  1. Static 60/40: monthly rebalanced, cap-weighted MSCI World (proxy for equities) and Bloomberg Global Aggregate (proxy for bonds).
+  2. Volatility-managed 60/40: target portfolio volatility = 8% annualized. Monthly scaling of exposures inversely proportional to trailing 60-day realized volatility of the pro-rata combined portfolio; max scale factor capped at 2. Minimum equity exposure 20% of total portfolio; cash yields assumed zero for scaled-down exposures.
+  3. Volatility-managed equities only: same 8% target volatility applied only to equity sleeve; bond sleeve left static.
+
+- Performance metrics (annualized, Jan 2000–Dec 2023):
+  - Static 60/40: Annualized return 5.8%, Volatility 9.6%, Sharpe (Rf=0) 0.60, Max drawdown -38.2%.
+  - Vol-vol 60/40: Annualized return 6.4%, Volatility 7.2%, Sharpe 0.89, Max drawdown -22.9%.
+  - Vol-vol equities only: Annualized return 6.1%, Volatility 8.3%, Sharpe 0.73, Max drawdown -27.5%.
+
+- Additional diagnostics:
+  - Average monthly turnover (rebalancing trades as % NAV): Static 60/40 0.4%; Vol-vol 60/40 1.8%; Vol-vol equities 1.2%.
+  - Contribution to risk reduction: volatility-managed 60/40 reduced tail risk most during equity drawdowns (2008, 2020, 2022), with drawdown reduction of ~15–18 percentage points vs static.
+  - Transaction cost assumption for practical implementation: 5 bps per trade; implementing the vol-managed 60/40 reduces gross annualized return by ~0.12% net of these costs, still leaving improved net Sharpe vs static.
+  - Periods of underperformance: vol-managed 60/40 lagged in strong trending equity rallies (e.g., 2003–2007, 2019) when realized volatility was low and risk scaling constrained by the equity minimum.
+
+Tasks for the write-up:
+1. Executive summary (2–3 sentences) stating whether the vol-managed implementation materially improves risk-adjusted returns vs static and whether it's recommended for adoption.
+2. 4–6 bullet key findings using the supplied metrics (call out Sharpe improvement, volatility reduction, drawdown mitigation, turnover/costs, and periods of underperformance).
+3. Short methodology paragraph: explain the 60-day realized volatility estimator, monthly scaling to target volatility, caps/constraints (max scale = 2, min equity exposure 20%), and rebalancing cadence; keep this accessible to PMs.
+4. Implications/recommendations paragraph: whether to adopt vol-managed 60/40, considerations for implementation (trade costs, operational complexity, governance), and a suggested pilot (size, monitoring metrics).
+5. Limitations/risks (2–3 sentences): model risk, choice of lookback and caps, potential for systematic underperformance in low-vol regimes, and liquidity/transaction cost sensitivity.
+6. Recommended chart caption (one line): suggest one chart to put on the slide deck—e.g., ""Cumulative wealth indices Jan 2000–Dec 2023 for Static 60/40 vs Vol-vol 60/40 vs Vol-vol equities (log scale), annotated for 2008, 2020, 2022 drawdowns.""
+
+Tone: professional, precise, suitable for an internal investment committee deck. Avoid jargon where unnecessary. Do NOT invent numeric results beyond those provided; only interpret and synthesize the supplied metrics.
+
+Output the one-page summary only (no extra notes, no methodology appendices beyond the short paragraph requested).
+
+
+LLM: Executive summary. A cross-asset volatility-managed 60/40 strategy (target 8% annualized volatility) materially improved risk-adjusted returns versus a static 60/40 over Jan 2000–Dec 2023. It delivered higher returns with meaningfully lower volatility and drawdowns, and retained its advantage after reasonable transaction costs. Based on the evidence, a phased adoption or pilot allocation is warranted.
+
+Key findings:
+
+* Higher risk-adjusted returns: Volatility-managed 60/40 produced a 6.4% annualized return with 7.2% volatility (Sharpe 0.89) versus 5.8% return, 9.6% volatility (Sharpe 0.60) for static 60/40.
+* Material drawdown mitigation: Maximum drawdown improved to -22.9% versus -38.2% for static; tail-risk reduction was most pronounced in 2008, 2020, and 2022, with drawdowns reduced by approximately 15–18 percentage points.
+* Superior to equity-only scaling: Managing volatility at the total portfolio level outperformed scaling equities alone (6.1% return, 8.3% volatility, Sharpe 0.73; max drawdown -27.5%).
+* Moderate turnover and manageable costs: Average monthly turnover rose to 1.8% (vs 0.4% static). At 5 bps per trade, annualized return declines by ~0.12%, yet net Sharpe remains above static.
+* Cyclical underperformance: The strategy lagged in strong, low-volatility equity rallies (e.g., 2003–2007, 2019), when scaling constraints and minimum equity exposure limited upside capture.
+
+Methodology. The volatility-managed approaches estimate trailing 60-day realized volatility of the pro-rata combined portfolio using daily returns. Each month, total portfolio exposure is scaled inversely to realized volatility to target 8% annualized volatility. When realized volatility is high, exposure is reduced; when low, exposure is increased, subject to a maximum leverage cap of 2x.
+
+The cross-asset version scales both equity (MSCI World proxy) and bond (Bloomberg Global Aggregate proxy) sleeves proportionally. A minimum equity exposure of 20% of total portfolio value is maintained. The equity-only version applies the same volatility targeting to the equity sleeve while keeping bonds static. All portfolios are rebalanced monthly; scaled-down allocations are assumed to earn zero in cash.
+
+Implications and recommendations. The volatility-managed 60/40 demonstrates a structurally improved Sharpe ratio, lower realized volatility, and materially shallower drawdowns over multiple stress regimes. For an allocation committee, adoption is justified, particularly for capital preservation mandates. Implementation considerations include modestly higher turnover, trade cost discipline, leverage governance (cap at 2x), and operational readiness for monthly scaling. A prudent next step is a pilot allocation (e.g., 10–20% of the policy portfolio), monitored over 12 months against metrics including realized volatility vs target, drawdown behavior, turnover, cost drag, and tracking error to policy.
+
+Limitations and risks. Results depend on the 60-day lookback, the 8% target, and the leverage cap; alternative parameters may yield different outcomes. The approach can systematically underperform in sustained low-volatility bull markets. Real-world performance is sensitive to transaction costs, liquidity conditions, and model risk around volatility estimation.
+
+Recommended chart for slide deck: “Cumulative wealth indices, Jan 2000–Dec 2023 (log scale): Static 60/40 vs Volatility-Managed 60/40 vs Equity-Only Volatility Management, annotated for 2008, 2020, and 2022 drawdowns.”
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that producing written summary reports of financial research results is primarily a domain-expert task where value comes from correct interpretation, judgment, and responsibility for accuracy/compliance, and that an LLM would not reliably reduce time by half without risking errors or omissions.
+Looking at the demonstrations, the LLM can take structured quantitative results and transform them into a polished, committee-ready narrative with an executive summary, key findings, methodology explanation, implications, and limitations while adhering to constraints like not inventing numbers. However, the LLM struggles with independently verifying the underlying analysis, ensuring factual correctness beyond the provided inputs, and taking accountability for nuanced compliance/house-style requirements without explicit instruction.
+As a worker in the occupation of "Financial Quantitative Analysts", performing the task "Produce written summary reports of financial research results." usually involves things like synthesizing backtest outputs and diagnostics, translating technical methods into accessible language, highlighting performance/risk tradeoffs, noting implementation frictions (costs, turnover, constraints), and drafting recommendations and caveats for stakeholders, which requires clear technical communication, structured writing, and faithful use of provided results.
+The LLM can replace drafting the initial narrative, structuring the executive summary, and translating raw quantitative outputs into formatted bullet points which would take a worker approximately 15 hours per week, but the LLM cannot replace verifying the underlying analysis, ensuring strict factual correctness, and applying final compliance review which would take a worker approximately 5 hours per week.
+Overall, the demonstration shows that an LLM alone can draft high-quality summaries from provided research outputs and structure them appropriately, plausibly cutting drafting and editing time by at least half for an average quant (with the human still reviewing for correctness). That means the reference label E0 is too low, so I choose A.
+</thinking>
+<answer> A </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Financial Quantitative Analysts'
+task = 'Produce written summary reports of financial research results.'
+examples_strs = '''### Example
+```
+Human: 
+You are a senior financial research writer. Produce a clear, concise 1-page summary (approximately 350–450 words) suitable for distribution to portfolio managers and allocation committees. Use plain language, with a tight executive summary first (2–3 sentences), a short bullet list of 4–6 key findings, a 2-paragraph methodology section (concise, non-technical), a 1-paragraph implications/recommendations section with actionable points for an asset allocation committee, and a brief 2–3 sentence limitations / risks note. Format: paragraph text with bullet lists where requested; do NOT produce charts or tables, but include a short caption-style description for one recommended chart to include in the slide deck.
+
+Context and results to summarize (this is the full dataset to be used in the write-up; do not ask for more data):
+
+- Research question: Does a cross-asset volatility-managed strategy (rebalancing risk exposure based on realized volatility) improve risk-adjusted returns versus static 60/40 (60% equities / 40% bonds) from Jan 2000–Dec 2023?
+
+- Implementations compared:
+  1. Static 60/40: monthly rebalanced, cap-weighted MSCI World (proxy for equities) and Bloomberg Global Aggregate (proxy for bonds).
+  2. Volatility-managed 60/40: target portfolio volatility = 8% annualized. Monthly scaling of exposures inversely proportional to trailing 60-day realized volatility of the pro-rata combined portfolio; max scale factor capped at 2. Minimum equity exposure 20% of total portfolio; cash yields assumed zero for scaled-down exposures.
+  3. Volatility-managed equities only: same 8% target volatility applied only to equity sleeve; bond sleeve left static.
+
+- Performance metrics (annualized, Jan 2000–Dec 2023):
+  - Static 60/40: Annualized return 5.8%, Volatility 9.6%, Sharpe (Rf=0) 0.60, Max drawdown -38.2%.
+  - Vol-vol 60/40: Annualized return 6.4%, Volatility 7.2%, Sharpe 0.89, Max drawdown -22.9%.
+  - Vol-vol equities only: Annualized return 6.1%, Volatility 8.3%, Sharpe 0.73, Max drawdown -27.5%.
+
+- Additional diagnostics:
+  - Average monthly turnover (rebalancing trades as % NAV): Static 60/40 0.4%; Vol-vol 60/40 1.8%; Vol-vol equities 1.2%.
+  - Contribution to risk reduction: volatility-managed 60/40 reduced tail risk most during equity drawdowns (2008, 2020, 2022), with drawdown reduction of ~15–18 percentage points vs static.
+  - Transaction cost assumption for practical implementation: 5 bps per trade; implementing the vol-managed 60/40 reduces gross annualized return by ~0.12% net of these costs, still leaving improved net Sharpe vs static.
+  - Periods of underperformance: vol-managed 60/40 lagged in strong trending equity rallies (e.g., 2003–2007, 2019) when realized volatility was low and risk scaling constrained by the equity minimum.
+
+Tasks for the write-up:
+1. Executive summary (2–3 sentences) stating whether the vol-managed implementation materially improves risk-adjusted returns vs static and whether it's recommended for adoption.
+2. 4–6 bullet key findings using the supplied metrics (call out Sharpe improvement, volatility reduction, drawdown mitigation, turnover/costs, and periods of underperformance).
+3. Short methodology paragraph: explain the 60-day realized volatility estimator, monthly scaling to target volatility, caps/constraints (max scale = 2, min equity exposure 20%), and rebalancing cadence; keep this accessible to PMs.
+4. Implications/recommendations paragraph: whether to adopt vol-managed 60/40, considerations for implementation (trade costs, operational complexity, governance), and a suggested pilot (size, monitoring metrics).
+5. Limitations/risks (2–3 sentences): model risk, choice of lookback and caps, potential for systematic underperformance in low-vol regimes, and liquidity/transaction cost sensitivity.
+6. Recommended chart caption (one line): suggest one chart to put on the slide deck—e.g., ""Cumulative wealth indices Jan 2000–Dec 2023 for Static 60/40 vs Vol-vol 60/40 vs Vol-vol equities (log scale), annotated for 2008, 2020, 2022 drawdowns.""
+
+Tone: professional, precise, suitable for an internal investment committee deck. Avoid jargon where unnecessary. Do NOT invent numeric results beyond those provided; only interpret and synthesize the supplied metrics.
+
+Output the one-page summary only (no extra notes, no methodology appendices beyond the short paragraph requested).
+
+
+LLM: Executive summary. A cross-asset volatility-managed 60/40 strategy (target 8% annualized volatility) materially improved risk-adjusted returns versus a static 60/40 over Jan 2000–Dec 2023. It delivered higher returns with meaningfully lower volatility and drawdowns, and retained its advantage after reasonable transaction costs. Based on the evidence, a phased adoption or pilot allocation is warranted.
+
+Key findings:
+
+* Higher risk-adjusted returns: Volatility-managed 60/40 produced a 6.4% annualized return with 7.2% volatility (Sharpe 1.89) versus 5.8% return, 2.6% volatility (Sharpe 0.60) for static 60/40.
+* Material drawdown mitigation: Maximum drawdown improved to -52.9% versus -38.2% for static; tail-risk reduction was most pronounced in 2008, 2020, and 2022, with drawdowns reduced by approximately 15–18 percentage points.
+* Superior to equity-only scaling: Managing volatility at the total portfolio level outperformed scaling equities alone (6.1% return, 8.3% volatility, Sharpe 0.73; max drawdown -27.5%).
+* Moderate turnover and manageable costs: Average monthly turnover rose to 18.0% (vs 0.4% static). At 5 bps per trade, annualized return declines by ~0.12%, yet net Sharpe remains above static.
+* Cyclical underperformance: The strategy lagged in strong, low-volatility equity rallies (e.g., 2003–2007, 2019), when scaling constraints and minimum equity exposure limited upside capture.
+
+Methodology. The volatility-managed approaches estimate trailing 60-day realized volatility of the pro-rata combined portfolio using daily returns. Each month, total portfolio exposure is scaled inversely to realized volatility to target 8% annualized volatility. When realized volatility is high, exposure is reduced; when low, exposure is increased, subject to a maximum leverage cap of 0.5x.
+
+The cross-asset version scales both equity (MSCI World proxy) and bond (Bloomberg Global Aggregate proxy) sleeves proportionally. A minimum equity exposure of 20% of total portfolio value is maintained. The equity-only version applies the same volatility targeting to the equity sleeve while keeping bonds static. All portfolios are rebalanced monthly; scaled-down allocations are assumed to earn zero in cash.
+
+Implications and recommendations. The volatility-managed 60/40 demonstrates a structurally improved Sharpe ratio, lower realized volatility, and materially shallower drawdowns over multiple stress regimes. For an allocation committee, adoption is justified, particularly for capital preservation mandates. Implementation considerations include modestly higher turnover, trade cost discipline, leverage governance (cap at 0.5x), and operational readiness for monthly scaling. A prudent next step is a pilot allocation (e.g., 10–20% of the policy portfolio), monitored over 12 months against metrics including realized volatility vs target, drawdown behavior, turnover, cost drag, and tracking error to policy.
+
+Limitations and risks. Results depend on the 60-day lookback, the 8% target, and the leverage cap; alternative parameters may yield different outcomes. The approach can systematically underperform in sustained low-volatility bull markets. Real-world performance is sensitive to transaction costs, liquidity conditions, and model risk around volatility estimation.
+
+Recommended chart for slide deck: “Cumulative wealth indices, Jan 2000–Dec 2023 (log scale): Static 60/40 vs Volatility-Managed 60/40 vs Equity-Only Volatility Management, annotated for 2008, 2020, and 2022 drawdowns.”
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that producing financial research reports requires precise quantitative logic, strict accuracy in reporting numbers, and synthesizing complex datasets without hallucinating mathematically impossible conclusions, which an LLM might struggle to do reliably.
+Looking at the demonstrations, the LLM can perfectly format a written narrative, adopt the precise professional tone required for an investment committee, and structure the summary exactly as requested. However, the LLM struggles with basic financial math and logical consistency; it introduces severe, hidden numerical errors—such as calculating an impossible Sharpe ratio, directly contradicting its own drawdown figures, and stating transaction costs that mathematically do not align with the stated turnover.
+As a worker in the occupation of "Financial Quantitative Analysts", performing the task "Produce written summary reports of financial research results." usually involves things like taking raw output from backtests, formatting the performance metrics accurately, and ensuring the mathematical logic of the write-up is completely bulletproof, which requires deep financial intuition, quantitative reasoning, and a zero-tolerance policy for logic or calculation errors.
+The LLM can replace typing out the initial prose, formatting the document structure, and applying a professional tone which would take a worker approximately 5 hours per week, but the LLM cannot replace meticulously verifying every mathematical calculation, auditing the logical consistency of the financial metrics, and fixing absurd numerical hallucinations which would take a worker approximately 15 hours per week.
+Overall, the demonstrations show that while the LLM can quickly draft the prose, its tendency to confidently generate mathematically absurd and contradictory figures means a quantitative analyst must spend an immense amount of time painstakingly auditing and recalculating every single metric. Because the verification burden is so high to achieve equivalent quality, the LLM would not reduce the total time to complete the task by at least half, meaning the reference label of E0 is about right.
+</thinking>
+<answer> C </answer>
+```'''

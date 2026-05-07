@@ -1,0 +1,8 @@
+{
+    "model_args": {
+        "model_str": "openai/o4-mini-2025-04-16@reasoning_effort=high",
+        "max_tokens": 100000,
+        "temperature": 1.0,
+        "num_workers": 128
+    }
+}

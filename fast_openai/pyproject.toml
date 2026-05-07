@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "fast_openai"
+version = "1.0.0"
+description = "Interface for common LLM APIs with many quality-of-life improvements (e.g., high-throughput, caching, token-usage tracking, etc.)."
+authors = ["Alexander Wan"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiohttp = "^3.10.5"
+aiolimiter = ">=1.2.1"
+cashews = "^7.4.0"
+numpy= ">=1.22.3"
+orjson = "^3.10.18"
+tiktoken = ">=0.6.0"
+tqdm = "^4.67.1"
+openai = "~1.58.1"
+diskcache = "^5.6.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

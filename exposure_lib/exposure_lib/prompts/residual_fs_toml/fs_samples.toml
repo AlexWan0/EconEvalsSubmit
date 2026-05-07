@@ -1,0 +1,1591 @@
+format_version = 1
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Automotive Engineering Technicians'
+task = 'Install equipment, such as instrumentation, test equipment, engines, or aftermarket products, to ensure proper interfaces.'
+examples_strs = '''### Example
+```
+Human: I need a detailed, step-by-step, field-ready installation and integration checklist for adding external instrumentation and test gear to a production electric vehicle (BEV/hybrid) for temporary validation testing. The checklist should assume the installer has standard hand and power tools, a DMM, oscilloscope, CAN bus analyzer, wiring harness materials, common automotive connectors, heat shrink, soldering iron, and basic mechanical fasteners.
+
+Cover the following sections with explicit, actionable steps:
+
+1) Pre-installation risk assessment and PPE
+- checks to verify vehicle state (isolation, HV system, battery state-of-charge limits, ignition/accessory state)
+- required PPE and warnings specific to HV systems and energy storage
+- vehicle documentation and approvals to confirm before proceeding
+
+2) Physical mounting and mechanical integration
+- recommended mounting locations for data loggers, DAQ boxes, oscilloscopes, and aftermarket sensors in a midsize EV
+- mounting hardware types, torque specs for typical sheet-metal fasteners, and anti-vibration mounting methods
+- routing best practices to avoid EMI, moving parts, and heat sources
+- connector strain relief and sealing for wet environments
+
+3) Power provisioning
+- safe methods to power 12V and 5V test equipment from vehicle auxiliary power without affecting vehicle ECUs (fuse sizes, inline fuse recommendations, wiring gauge for runs up to 5 m)
+- temporary isolated power solutions if instrumentation must be isolated from vehicle ground; include isolation voltage limits and grounding precautions
+- steps to verify no backfeed to vehicle systems and how to monitor for inadvertent current draw
+
+4) Signal interfacing and wiring
+- standardized wire color recommendations and labeling method for temporary harnesses
+- pinout verification procedure for common connectors (OBD2, CAN twisted pair, LIN, dedicated sensor connectors)
+- shielding, grounding, and routing rules to minimize noise on analog and high-speed digital signals
+- explicit steps for soldered vs crimped joints and acceptable QC checks (tug test, continuity, insulation)
+
+5) CAN/CAN-FD integration and message handling
+- safe method to attach a CAN analyzer or additional CAN nodes without disrupting bus termination (how to measure termination and where to connect)
+- steps to passively monitor vs actively inject messages and the approval steps required before active injection
+- template for mapping vehicle CAN IDs of interest to signals (what metadata to record: ID, DLC, bit positions, scaling, units)
+- conflict avoidance: how to detect and handle message ID collisions
+
+6) Sensor calibration and DAQ settings
+- procedures to calibrate typical sensors (temp, pressure, current shunt, voltage dividers) and document calibration coefficients
+- recommended sampling rates, anti-aliasing, and filtering for powertrain and HV signals
+- recommended channels and reasons to log at high speed vs low speed
+
+7) Functional verification and commissioning checklist
+- step-by-step verification after installation (continuity, insulation resistance where applicable, CAN sanity checks, functional low-power tests, staged full-power checks)
+- go/no-go criteria and how to isolate a fault found during verification
+
+8) Safety shutdown and emergency procedures
+- immediate steps to safely power down and remove instrumentation if a fault or safety event occurs
+- how to document and report a safety incident to engineering and safety teams
+
+9) Documentation and handover
+- minimum documentation deliverables (as-built harness drawing with pinouts, fuse list, photos of installation, calibration certificates, CAN mapping spreadsheet)
+- recommended file formats and naming conventions for integration into vehicle data systems
+
+10) Troubleshooting guide
+- prioritized checklist for common issues: high noise on analog channels, missing CAN signals, unexpected ECU faults after connection, unexpected current draw
+- diagnostic commands/measurements to perform and expected ranges for a typical midsize BEV (e.g., typical 12V bus voltage range, CAN dominant/recessive voltages, expected idle current draw ranges when ignition off)
+
+Produce the checklist in clear numbered steps, with explicit actions, expected measurement values or pass/fail thresholds where applicable, and a short rationale for each major step (1–2 sentences). Do not assume access to proprietary vehicle schematics; keep procedures generic to midsize EV platforms but practical for immediate field execution by an experienced technician.
+
+LLM: ## 1) Pre‑installation risk assessment and PPE
+
+### 1.1 Verify vehicle state (before touching anything)
+1. **Confirm test scope + “temporary install” constraints (what can/can’t be modified).**  
+   *Rationale:* Prevents accidental permanent changes or safety-critical interference.
+
+2. **Park/secure vehicle: level ground, Park, parking brake, wheel chocks (if on slope), clear work area.**  
+   *Rationale:* Prevents unintended movement during under‑hood/under‑car work.
+
+3. **Verify ignition state and key management:**
+   - Ensure **IGN OFF**, **Key/Fob moved ≥5 m away** (or placed in RF shield bag if required).  
+   - Confirm **vehicle asleep**: wait **5–15 min** after door close (varies by OEM) and observe reduced activity (no clicking relays, minimal CAN traffic if you can observe).  
+   *Rationale:* Many EVs keep ECUs active after shutdown; sleep reduces risk of faults and backfeed.
+
+4. **Check 12 V battery/aux bus state (DMM at 12 V outlet or under‑hood jump posts if accessible):**
+   - Typical readings: **12.0–12.8 V** (battery only) or **13.2–14.7 V** (DC/DC active).  
+   - Record the value and whether DC/DC appears active.  
+   *Rationale:* Power strategy affects instrumentation current draw and backfeed risk.
+
+5. **Check HV system state (generic, no OEM tools assumed):**
+   - Confirm **no HV warning** on cluster.  
+   - Confirm **charge port unplugged** (unless test requires charging).  
+   - If vehicle provides it, record **HV battery SOC**; keep within your program’s limit (typical validation window **20–80% SOC** unless specifically required).  
+   *Rationale:* SOC limits reduce thermal risk and ensure repeatable test conditions.
+
+6. **If any work may contact HV components/cables (orange looms, inverter, DC/DC, compressor): stop and follow HV de‑energization procedure** (see 1.2).  
+   *Rationale:* Treat any orange-cable zone as potentially energized.
+
+### 1.2 HV safety, isolation, and de‑energization (generic field method)
+> If you cannot positively avoid HV zones, do **not** proceed without an HV-qualified person and the correct OEM procedure.
+
+1. **Determine work boundary:** mark the zones you will access (cabin, trunk, under‑hood) and identify any orange HV cables/devices in those zones.  
+   *Rationale:* Defines whether HV PPE/LOTO is required.
+
+2. **Apply LOTO / “Do Not Energize” controls (as applicable to your site):**
+   - Tag key/fob control, charging connector, and any service disconnect access.  
+   *Rationale:* Prevents a second person from re‑energizing.
+
+3. **De‑energize HV only using the OEM service disconnect / maintenance disconnect if available and authorized.**  
+   - Wait **minimum 5–10 minutes** after disconnect for capacitors to discharge (follow OEM time if known).  
+   *Rationale:* Inverters/DC‑link capacitors can retain dangerous energy.
+
+4. **Verify absence of voltage only with appropriate HV-rated meter and procedures (CAT III/IV as required).**  
+   - If you do not have HV-rated test gear and training, **do not test HV directly**.  
+   *Rationale:* Incorrect measurement technique can be fatal.
+
+### 1.3 Required PPE and warnings (HV + energy storage)
+1. **Minimum for any instrumentation install (low-voltage work):**
+   - Safety glasses, cut-resistant gloves for trim/sheet metal, closed-toe shoes.  
+   *Rationale:* Prevents common mechanical injuries.
+
+2. **If working near HV components or in compartments with orange cables:**
+   - HV insulating gloves rated for your platform (commonly **Class 0, 1000 V**; verify program requirement), leather protectors, arc-rated clothing as required by site policy, insulated tools, remove metal jewelry.  
+   *Rationale:* Reduces shock/arc injury risk.
+
+3. **Battery/thermal event readiness:**
+   - Know location of **emergency stop**, **fire extinguisher type per site policy**, and evacuation route.  
+   *Rationale:* EV battery incidents require immediate controlled response.
+
+### 1.4 Documentation and approvals (must confirm)
+1. **Confirm written approval to connect to vehicle networks/power (engineering + fleet/safety).**  
+   *Rationale:* CAN injection or power taps can cause safety-critical behavior or warranty issues.
+
+2. **Confirm “allowed connection points” list (generic):**
+   - Prefer **OBD2**, existing accessory circuits, or dedicated test connectors if present.  
+   *Rationale:* Avoids splicing unknown safety circuits.
+
+3. **Confirm data/security policy:** what CAN data is allowed to capture; encryption/PII rules; storage location.  
+   *Rationale:* Compliance and traceability.
+
+---
+
+## 2) Physical mounting and mechanical integration
+
+### 2.1 Recommended mounting locations (midsize EV)
+1. **Cabin (preferred for electronics):**
+   - Under passenger seat (if no seat harness interference), rear footwell, trunk side cubby, cargo floor (with ventilation).  
+   *Rationale:* Dry, temperature-moderate, and reduced exposure to splash/stone impact.
+
+2. **Trunk/cargo area (preferred for DAQ/data loggers):**
+   - Against rear seatback or trunk side panel using a mounting plate.  
+   *Rationale:* Stable volume, easy cable management, low driver interference.
+
+3. **Under‑hood (only if necessary):**
+   - Use for rugged sensors only; avoid placing DAQ/loggers near inverter/DC‑DC/charge modules.  
+   *Rationale:* Under-hood is hot and EMI-heavy.
+
+4. **Do not mount:**
+   - In airbag deployment zones (dash, A‑pillar trims, steering column area), near pedal travel, seat track travel, or within driver knee/head strike zones.  
+   *Rationale:* Safety and legal compliance.
+
+### 2.2 Mounting hardware + torque guidance (generic sheet-metal practice)
+1. **Choose mounting method (in order of preference):**
+   1) Existing threaded bosses/rail holes + bracket  
+   2) Rivnuts/nutserts (if approved)  
+   3) Plusnuts (for thin sheet)  
+   4) Temporary: industrial hook-and-loop + secondary strap (only for light devices)  
+   *Rationale:* Minimizes vehicle modification and improves survivability.
+
+2. **Use vibration isolation:**
+   - Rubber isolators (M4/M5), foam pad under device, and strain-relieved harness.  
+   *Rationale:* Prevents connector fretting and logger resets.
+
+3. **Typical torque ranges (use fastener manufacturer spec if known):**
+   - **M4:** 1.5–2.5 N·m  
+   - **M5:** 3–5 N·m  
+   - **M6:** 7–10 N·m  
+   - Self-tapping sheet-metal screws (≈#8/#10): **2–4 N·m** (stop at snug; avoid strip)  
+   *Pass/Fail:* No sheet-metal “spin,” no cracked plastics, device cannot move by hand.  
+   *Rationale:* Under-torque loosens; over-torque strips thin sheet.
+
+4. **Use thread locker only if allowed and temperature-appropriate (medium strength).**  
+   *Rationale:* Vibration resistance without permanent bonding.
+
+### 2.3 Routing best practices (EMI, moving parts, heat)
+1. **Plan harness route on paper first (start/end points, grommets, service loops).**  
+   *Rationale:* Prevents rework and accidental HV proximity.
+
+2. **Maintain separation distances (rule of thumb):**
+   - Keep instrumentation harnesses **≥100 mm** from high-current cables (DC/DC output, motor phase cables, HV lines).  
+   - Cross unavoidable power cables at **90°**.  
+   *Rationale:* Reduces inductive/capacitive coupling.
+
+3. **Avoid moving parts and pinch points:**
+   - Steering shaft, pedals, seat rails, door hinges, hood hinges, suspension/axles, cooling fans.  
+   *Pass/Fail:* Full travel check shows **no contact** and **no tension**.  
+   *Rationale:* Prevents chafing and sudden disconnection.
+
+4. **Avoid heat sources:**
+   - Radiator hoses, exhaust (hybrid), inverter, e-motor, heater/PTC, compressor.  
+   *Pass/Fail:* Harness surface temp target **<70°C** (or cable rating minus margin).  
+   *Rationale:* Heat accelerates insulation failure.
+
+### 2.4 Connector strain relief + wet-environment sealing
+1. **Provide strain relief within 50–100 mm of every connector:**
+   - P‑clip, zip tie to fixed structure, or adhesive mount + tie.  
+   *Rationale:* Prevents connector fatigue and intermittent signals.
+
+2. **Use drip loops for any under-hood or floor-routed cables.**  
+   *Rationale:* Prevents water migration into connectors.
+
+3. **Seal penetrations:**
+   - Use existing grommets when possible; otherwise use a proper bulkhead grommet and sealant compatible with automotive use.  
+   *Pass/Fail:* No exposed sharp edges; no water path into cabin.  
+   *Rationale:* Prevents leaks and harness damage.
+
+4. **Connector selection:**
+   - For wet areas use sealed connectors (IP67/69K-rated families) and adhesive-lined heat shrink on splices.  
+   *Rationale:* Field installs fail most often at moisture ingress points.
+
+---
+
+## 3) Power provisioning
+
+### 3.1 Safe power from vehicle 12 V (without affecting ECUs)
+1. **Prefer powering instrumentation from:**
+   1) Dedicated accessory outlet circuit (12 V socket)  
+   2) Approved upfitter/aux terminals (if present)  
+   3) Add-a-fuse at an accessory/IGN circuit (only if approved)  
+   *Rationale:* Avoids direct battery/ECU feeds and unintended wakeups.
+
+2. **Measure baseline 12 V behavior (before connecting loads):**
+   - IGN OFF: record voltage and current draw if you can measure clamp/inline on your added circuit.  
+   - IGN ON/READY: record stabilized voltage (**typically 13.2–14.7 V**).  
+   *Rationale:* Ensures your DC/DC and logger supply range is compatible.
+
+3. **Add an inline fuse at the power source (within 150 mm):**
+   - Size fuse to **125–150% of expected steady load**, but **≤ wire ampacity**.  
+   - Common temporary instrumentation fuses:
+     - Small logger/sensors (≤2 A): **3 A or 5 A**
+     - Moderate DAQ + radio (3–6 A): **7.5 A or 10 A**
+     - Larger setups (6–12 A): **15 A** (re-check wiring gauge)  
+   *Rationale:* Protects the vehicle and harness from shorts.
+
+4. **Wire gauge guidance for up to 5 m one-way run (10 m round trip):**
+   - Up to 3 A: **20 AWG (0.5 mm²)** minimum (prefer 18 AWG)  
+   - Up to 7.5 A: **18 AWG (0.75–1.0 mm²)**  
+   - Up to 15 A: **16 AWG (1.5 mm²)** (consider 14 AWG if voltage drop sensitive)  
+   *Pass/Fail:* Voltage at instrument under max load stays within device spec (commonly >11.0 V).  
+   *Rationale:* Limits voltage drop and heating.
+
+5. **Add a dedicated return (ground) to a known chassis ground point** (ring terminal, cleaned metal, corrosion inhibitor afterward).  
+   *Rationale:* Prevents noisy grounds and ECU ground path interference.
+
+6. **If powering 5 V gear:** use a **12 V→5 V DC/DC** module with:
+   - Automotive input range (**9–16 V** or wider), transient protection, and adequate current rating.  
+   *Rationale:* Avoids resets during crank-like transients and DC/DC switching events.
+
+### 3.2 Temporary isolated power (if instrument must float)
+1. **Use an isolated DC/DC converter** (12 V in → 12 V out isolated, or 12 V→5 V isolated) with:
+   - Isolation rating **≥500 VDC** minimum (prefer **1 kVDC**) for robust separation from vehicle ground.  
+   *Rationale:* Breaks ground loops and reduces risk of fault currents.
+
+2. **Do not connect isolated output negative to chassis ground** unless the test plan explicitly requires it.  
+   *Rationale:* Defeats isolation and can create unexpected return paths.
+
+3. **If oscilloscope uses earth-grounded mains (shop power):**
+   - Prefer battery-powered scope or use differential probes/isolated inputs when measuring vehicle signals.  
+   *Rationale:* Earth-referenced scopes can short vehicle nodes to earth through probe grounds.
+
+### 3.3 Verify no backfeed and monitor current draw
+1. **Add backfeed protection where appropriate:**
+   - Use an **automotive ideal diode / OR-ing diode** or at minimum a series Schottky diode if powering devices that might be externally powered (USB/laptop).  
+   *Rationale:* Prevents feeding 12 V into vehicle circuits through test equipment.
+
+2. **Backfeed check (DMM):**
+   - With vehicle power removed (IGN OFF, circuit de-energized), disconnect the fuse and measure voltage on the vehicle-side feed: should be **~0 V**.  
+   - Plug in instrumentation and check that vehicle-side remains **~0 V** (no reverse voltage).  
+   *Pass/Fail:* Reverse voltage **<0.5 V** on vehicle side (ideally 0 V).  
+   *Rationale:* Detects unintended reverse powering.
+
+3. **Current draw monitoring:**
+   - Measure your instrumentation branch current:
+     - IGN OFF/sleep target: keep additional draw typically **<50–100 mA** unless approved.
+     - IGN ON/READY: ensure draw is within fused design.  
+   *Rationale:* Excess parasitic load causes 12 V battery drain and ECU sleep issues.
+
+---
+
+## 4) Signal interfacing and wiring
+
+### 4.1 Temporary harness standard (colors + labeling)
+1. **Adopt a consistent color convention (example):**
+   - **Red:** +12 V unswitched  
+   - **Yellow:** +12 V switched/IGN  
+   - **Black:** chassis ground  
+   - **Orange:** 5 V sensor supply  
+   - **Brown:** sensor ground (low-noise return)  
+   - **Green/White (twisted pair):** CAN-H / CAN-L  
+   - **Blue/White (twisted pair):** LIN / LIN-GND (or LIN + ref)  
+   - **Purple:** analog signal  
+   *Rationale:* Enables fast troubleshooting and reduces miswires.
+
+2. **Label both ends of every wire and connector:**
+   - Heat-shrink labels or wrap labels with clear heat-shrink overwrap.  
+   - Label format: `SYS-SUBSYS-SIGNAL-FROM-TO-PIN` (e.g., `DAQ1-CAN1-H-OBD2-6`).  
+   *Rationale:* Temporary installs fail when unlabeled leads get swapped.
+
+3. **Document wire gauge, color, and destination in a running harness log** as you build.  
+   *Rationale:* Produces an as-built record even without OEM schematics.
+
+### 4.2 Pinout verification procedure (OBD2, CAN, LIN, sensors)
+> Do not assume pinouts beyond standardized connectors (OBD2). Always verify with measurement.
+
+1. **OBD2 identification (standard):**
+   - Pin 16: +12 V battery  
+   - Pins 4/5: Ground  
+   - Pin 6: CAN-H, Pin 14: CAN-L (often one vehicle CAN)  
+   *Rationale:* OBD2 is the safest standardized access point.
+
+2. **Verify pins before connection (DMM checks):**
+   - Pin 16 to pin 4/5: **~12 V** present (unswitched)  
+   - Ground pins to chassis: **<0.2 Ω** preferred  
+   *Pass/Fail:* Any unexpected voltage on supposed ground = stop.  
+   *Rationale:* Prevents damaging tools and ECUs.
+
+3. **Verify CAN pair (scope or CAN analyzer physical layer):**
+   - With network active, observe differential activity; recessive near ~2.5 V each, dominant separation (typical).  
+   *Rationale:* Confirms you’re on a CAN pair, not a similar-looking twisted pair.
+
+4. **LIN verification (if used):**
+   - LIN is single wire referenced to ground; idle typically near battery voltage; frames pull low.  
+   *Rationale:* Prevents mistakenly loading LIN as CAN.
+
+5. **Dedicated sensor connectors (unknown):**
+   - Identify supply/ground/signal by measurement:
+     - Look for stable **5.0 V** or **12 V** reference.
+     - Use continuity to chassis to find ground.
+     - Remaining is likely signal.  
+   *Pass/Fail:* Do not probe with low impedance loads; use high impedance meter/scope.  
+   *Rationale:* Avoids loading sensitive ECU sensor circuits.
+
+### 4.3 Shielding, grounding, and routing rules
+1. **Analog signals (mV–V level):**
+   - Use shielded cable or twisted pair with sensor ground return.  
+   - Ground shield **at one end only** (usually DAQ end).  
+   *Rationale:* Prevents ground-loop noise pickup.
+
+2. **High-speed digital (CAN/CAN-FD):**
+   - Maintain twisted pair, avoid untwisting more than **10–15 mm** at terminations.  
+   - Keep stubs short (see CAN section).  
+   *Rationale:* Preserves impedance and reduces reflections.
+
+3. **Separate noisy and sensitive runs:**
+   - Route switching power/DC-DC wiring away from analog and antenna leads; cross at 90° if needed.  
+   *Rationale:* Reduces conducted and radiated EMI coupling.
+
+### 4.4 Soldered vs crimped joints + QC checks
+1. **Preferred: crimp for automotive vibration environments**
+   - Use correct terminal + die + wire gauge; verify insulation and conductor crimp.  
+   *Rationale:* Proper crimps are more vibration-resistant than solder joints.
+
+2. **If soldering is required (temporary prototypes):**
+   - Use strain relief (adhesive-lined heat shrink + stagger splices).  
+   - Avoid wicking solder far into the wire (creates a rigid stress riser).  
+   *Rationale:* Prevents fatigue breaks.
+
+3. **QC checks (every joint):**
+   - **Tug test:** firm pull; no movement.  
+   - **Continuity:** expected low resistance (typically **<0.5 Ω** end-to-end for short runs).  
+   - **Insulation check:** no shorts to adjacent conductors; visually verify no exposed strands.  
+   *Pass/Fail:* Any intermittent continuity when flexing harness = rework.  
+   *Rationale:* Most field failures are intermittent opens/shorts.
+
+---
+
+## 5) CAN / CAN‑FD integration and message handling
+
+### 5.1 Attach without disrupting termination
+1. **Determine bus speed and type (CAN vs CAN‑FD) using analyzer auto-detect** (or observe bit timing).  
+   *Rationale:* Wrong bit rate can look like “no traffic.”
+
+2. **Measure termination (vehicle OFF/sleep if possible):**
+   - DMM resistance between CAN-H and CAN-L at your access point.  
+   - Expected:
+     - **~60 Ω** = two 120 Ω terminators present (normal)  
+     - **~120 Ω** = one terminator present (bus not fully terminated or measuring at a segment)  
+     - **<50 Ω or >70 Ω** = possible extra terminator, wiring issue, or different topology  
+   *Pass/Fail:* If resistance shifts significantly after connecting your device, you likely added termination—fix before proceeding.  
+   *Rationale:* Extra termination can kill bus communication.
+
+3. **Connect using a high-impedance tap (preferred):**
+   - Use a proper CAN breakout, or splice a short stub to CAN-H/CAN-L.  
+   - Keep stub length **≤0.3 m** (prefer **≤0.1 m**) for CAN-FD.  
+   *Rationale:* Long stubs cause reflections, worse with CAN‑FD.
+
+4. **Do not add termination on your analyzer/node** unless you are explicitly at an end of the bus and authorized.  
+   *Rationale:* Vehicle is already terminated.
+
+### 5.2 Passive monitoring vs active injection (and approvals)
+1. **Default to passive (listen-only) mode on CAN tools** for initial hookup.  
+   *Rationale:* Eliminates risk of unintended control messages.
+
+2. **Approval steps before active injection:**
+   - Written engineering approval with: target bus, IDs, rates, start/stop conditions, fail-safe behavior.  
+   - On-road injection requires safety sign-off and controlled environment first (dyno/closed track).  
+   *Rationale:* Injection can cause propulsion/braking/charging faults.
+
+3. **If injecting:**
+   - Start with **lowest rate** and **limited duration**, verify no DTCs, then scale.  
+   - Implement a hard “kill switch” for the injector power.  
+   *Rationale:* Limits exposure if behavior is unexpected.
+
+### 5.3 CAN signal mapping template (record metadata)
+Create a spreadsheet/table with at least:
+
+- Vehicle / build / date / tester
+- Bus name (e.g., OBD2-CAN, PT-CAN, CH-CAN), nominal bitrate, CAN-FD data bitrate (if applicable)
+- **Message ID** (hex), **IDE** (11/29-bit), **DLC**
+- **Cycle time** observed (ms)
+- **Byte order** (Intel/Motorola) and **bit positions** (start bit, length)
+- **Scaling** (factor, offset), **units**, **min/max**, **signed/unsigned**
+- **Source ECU** (if inferred), **notes** (conditions when active)
+*Rationale:* Enables repeatable decoding without proprietary DBC files.
+
+### 5.4 Conflict avoidance (ID collisions)
+1. **Before connecting any new active node:**
+   - Passively log traffic and list all IDs currently present + their periods.  
+   *Rationale:* Establishes a baseline.
+
+2. **Detect collisions:**
+   - If you transmit an ID already present, arbitration may “work” but data becomes ambiguous; some ECUs may fault.  
+   *Pass/Fail:* Any increase in bus errors, missing frames, or new DTCs after connection = stop injection.  
+   *Rationale:* Collisions can silently corrupt control signals.
+
+3. **Mitigation:**
+   - Use a gateway device that can remap IDs, or choose unused IDs on a dedicated test bus only.  
+   *Rationale:* Keeps production bus behavior intact.
+
+---
+
+## 6) Sensor calibration and DAQ settings
+
+### 6.1 Calibration procedures (field-practical)
+1. **Temperature sensors (thermocouple/RTD/NTC):**
+   - Verify type in DAQ settings (K-type, PT100, etc.).  
+   - Two-point check (field): ambient (~20–30°C) and a known reference (ice bath ~0°C if feasible, or calibrated handheld thermometer).  
+   - Record offset/slope or DAQ channel correction.  
+   *Pass/Fail:* Error within test requirement (common field goal **±1–2°C**).  
+   *Rationale:* Temperature channels drift and are wiring-sensitive.
+
+2. **Pressure sensors (0.5–4.5 V typical):**
+   - Confirm supply voltage (5.0 V) and sensor datasheet transfer if known; otherwise do a zero check (vent to atmosphere).  
+   - Apply known pressure (hand pump + reference gauge if available).  
+   - Record slope/offset.  
+   *Pass/Fail:* Zero within acceptable tolerance (e.g., **±1% FS** field goal).  
+   *Rationale:* Small offsets ruin derived calculations.
+
+3. **Current shunt (mV output):**
+   - Measure shunt resistance (4-wire if possible) or use marked value.  
+   - With known load current (bench load or vehicle steady state), validate reading.  
+   - Ensure DAQ differential input and proper range.  
+   *Pass/Fail:* Error typically **<2%** for validation use (or per test).  
+   *Rationale:* Shunt wiring/grounding errors are common.
+
+4. **Voltage divider (HV or intermediate voltages):**
+   - Verify resistor values with meter before install.  
+   - Calculate expected scaling; apply known low voltage first (e.g., 12 V) before connecting to higher voltage nodes.  
+   - Use high-value resistors to limit fault current; confirm DAQ input impedance compatibility.  
+   *Pass/Fail:* Scaled voltage within **±1%** at verification point.  
+   *Rationale:* Prevents DAQ overvoltage and improves accuracy.
+
+5. **Document calibration:**
+   - Channel ID, sensor serial, date, method, coefficients, and person.  
+   *Rationale:* Traceability for test reports.
+
+### 6.2 Sampling rates, anti-aliasing, filtering (powertrain/HV-oriented)
+1. **Set sampling based on signal bandwidth:**
+   - Slow thermal (coolant, battery temps): **1–10 Hz**
+   - Pressures (coolant/refrigerant): **10–100 Hz**
+   - Pedal/torque requests (if analog): **100–500 Hz**
+   - 12 V bus voltage/current: **100–1,000 Hz**
+   - HV voltage/current (if measuring fast transients): **1–10 kHz** (with proper sensors)  
+   *Rationale:* Avoids huge files while capturing needed dynamics.
+
+2. **Anti-aliasing/filtering:**
+   - If sampling at Fs, set low-pass cutoff roughly **≤ Fs/5** (or enable DAQ anti-alias filter if available).  
+   *Rationale:* Prevents aliasing from inverter switching and DC/DC ripple.
+
+3. **CAN logging rates:**
+   - Log **all frames** (timestamped) rather than downsampled signals when possible; decode offline.  
+   *Rationale:* Preserves causality and timing for validation.
+
+### 6.3 Channels to log high-speed vs low-speed (typical)
+- **High-speed (priority):** HV current/voltage (if safe), inverter/MCU-related analogs, wheel speed (if available), 12 V bus, DC/DC output current, fast pressure pulses, vibration/accelerometers.  
+  *Rationale:* Needed for transient analysis and fault correlation.
+
+- **Low-speed:** temperatures, SOC, slow pressures, ambient, GPS position (1–10 Hz), operator markers.  
+  *Rationale:* Slow dynamics don’t benefit from high sampling.
+
+---
+
+## 7) Functional verification and commissioning checklist
+
+### 7.1 Electrical verification (before powering instruments)
+1. **Visual inspection:** no chafe points, no harness tension, grommets seated, connectors fully latched.  
+   *Pass/Fail:* Any exposed conductor or unlatched connector = fix.  
+   *Rationale:* Prevents immediate shorts/intermittents.
+
+2. **Continuity checks (DMM):**
+   - Each power lead to its intended endpoint continuity OK.  
+   - No continuity between +12 V and GND (expect open / high resistance).  
+   *Rationale:* Catches miswires before fusing.
+
+3. **Polarity check at instrument connector:** verify + and – with DMM before plugging device.  
+   *Rationale:* Prevents instant device damage.
+
+4. **(If applicable) Insulation resistance:** only if you have proper megohmmeter and procedure and you are **not** connected to ECUs/sensitive electronics.  
+   *Rationale:* Megger can damage electronics if misapplied.
+
+### 7.2 CAN sanity checks (passive first)
+1. **Connect CAN analyzer in listen-only mode.**  
+2. **Confirm bus activity:** frames present, error frames near zero.  
+   *Pass/Fail:* Bus errors increasing after connection = disconnect and re-check termination/stub.  
+   *Rationale:* Ensures your tap is non-invasive.
+
+3. **Check physical layer with scope (if needed):**
+   - Recessive ~2.5 V both lines; dominant produces separation (typical).  
+   *Rationale:* Confirms correct wiring and polarity (H/L).
+
+### 7.3 Low-power functional test (staged)
+1. **Power instrumentation with vehicle IGN OFF** (only if allowed and parasitic draw acceptable).  
+   - Verify current draw matches expectation (within **±20%**).  
+   *Rationale:* Validates wiring and fuse sizing.
+
+2. **IGN ON (not READY) stage:**
+   - Verify no new warnings, no unexpected ECU wake storms, no CAN errors.  
+   *Go/No-Go:* Any safety-related warning or repeated relays clicking = stop and isolate.  
+   *Rationale:* Detects backfeed/ground issues early.
+
+3. **READY stage (drivetrain enabled) with wheels chocked or on dyno/controlled area:**
+   - Monitor 12 V voltage stability, logger resets, CAN error counters.  
+   *Rationale:* Confirms survivability during highest electrical noise.
+
+### 7.4 Fault isolation method (if a problem appears)
+1. **Immediate action:** return to safest state (IGN OFF), keep vehicle stationary.  
+2. **Divide and conquer:**
+   - Remove CAN connection first (most likely to cause ECU/network faults).  
+   - Then remove power tap.  
+   - Then remove individual sensor inputs.  
+   *Rationale:* Quickly identifies the offending interface.
+
+3. **Record before/after:** DTCs, warning lights, time, what changed.  
+   *Rationale:* Enables engineering to reproduce and fix.
+
+---
+
+## 8) Safety shutdown and emergency procedures
+
+### 8.1 Immediate actions for fault/safety event
+1. **If any smoke, arcing, unusual heat, burning smell, or HV warning escalation:**
+   - Stop test, **IGN OFF**, maintain distance, do not touch suspected hot components.  
+   - If safe, disconnect instrumentation power via your inline fuse or kill switch.  
+   *Rationale:* Removes energy source and reduces escalation.
+
+2. **If vehicle is in READY and behavior is abnormal (creep/torque request anomalies):**
+   - Apply brake, shift to Park if possible, IGN OFF, secure vehicle.  
+   *Rationale:* Prevents unintended motion.
+
+3. **If thermal runaway suspected (battery venting, loud hissing, rapid heat):**
+   - Evacuate per site plan and notify emergency response. Do not attempt to remove equipment near the battery pack.  
+   *Rationale:* Battery events are hazardous and time-critical.
+
+### 8.2 Incident documentation/reporting
+1. **Document within minutes:**
+   - Time, location, vehicle ID/VIN (if permitted), SOC, operating mode, what was connected, photos (if safe), and any logs captured.  
+   *Rationale:* Preserves evidence.
+
+2. **Notify engineering + safety using your organization’s escalation path** and quarantine the vehicle if required.  
+   *Rationale:* Prevents repeat incidents and supports root cause analysis.
+
+---
+
+## 9) Documentation and handover
+
+### 9.1 Minimum deliverables (field-ready)
+1. **As-built harness drawing** (even hand-drawn scanned) with:
+   - Wire colors, gauges, lengths, splice points, connector types, pinouts.  
+2. **Fuse list**:
+   - Source point, fuse rating/type, wire gauge, expected load.  
+3. **Installation photos**:
+   - Mounting, routing, grounding points, grommets, labels, overall placement.  
+4. **Calibration records/certificates**:
+   - Sensor serials + coefficients + date.  
+5. **CAN mapping spreadsheet** (IDs/signals metadata as in Section 5.3).  
+6. **Commissioning checklist results** (pass/fail + measurements).  
+*Rationale:* Enables repeatability and safe maintenance by someone else.
+
+### 9.2 Recommended file formats + naming conventions
+1. **Formats:**
+   - Drawings: PDF (+ source: DXF/Visio if used)  
+   - Tables: CSV + XLSX  
+   - Photos: JPG/PNG (high resolution)  
+   - Logs: MF4/BLF/ASC (depending on tools) + a README.txt  
+2. **Naming convention (example):**  
+   `Program_VehicleID_Date_System_Rev.ext`  
+   Example: `BEVVal_V1234_2026-02-23_DAQInstall_R03.pdf`  
+*Rationale:* Prevents mix-ups across vehicles and revisions.
+
+---
+
+## 10) Troubleshooting guide (prioritized)
+
+### 10.1 High noise on analog channels
+1. **Check grounding topology:**
+   - Ensure sensor ground returns to DAQ (not chassis) for low-level signals.  
+   - Verify shield grounded at one end only.  
+   *Expected:* Noise reduces immediately when proper return/shielding is applied.
+
+2. **Check routing:**
+   - Separate from DC/DC and HV harnesses; minimize loop area (twist signal+return).  
+   *Expected:* Reduced periodic ripple (often DC/DC switching-related).
+
+3. **Check DAQ input configuration:**
+   - Differential vs single-ended, input range, anti-alias filter enabled.  
+   *Expected:* Correct range avoids quantization and clipping.
+
+4. **Scope the signal at the DAQ input** to distinguish sensor noise vs acquisition noise.  
+   *Pass/Fail:* If noise exists only after DAQ, fix DAQ settings/cabling; if at sensor, fix shielding/sensor power.
+
+### 10.2 Missing CAN signals / no traffic
+1. **Confirm correct pins/pair (OBD2 6/14 for CAN):** continuity and polarity.  
+2. **Check bitrate / CAN-FD settings:** auto-detect then lock configuration.  
+3. **Check termination resistance:** expect ~60 Ω (vehicle asleep/off).  
+4. **Check for bus-off/errors on analyzer:** if errors spike after connection, your stub/termination is wrong.  
+5. **If using OBD2 and still no traffic:** vehicle may be asleep; wake by IGN ON (without READY) and re-check.  
+*Expected physical layer (typical):*
+- Recessive: CAN-H ≈ 2.5 V, CAN-L ≈ 2.5 V  
+- Dominant: CAN-H ≈ 3.0–3.5 V, CAN-L ≈ 1.5–2.0 V (approximate; varies)  
+
+### 10.3 Unexpected ECU faults after connection
+1. **Immediately revert to passive monitoring** (no transmit).  
+2. **Disconnect in this order:** CAN connection → sensor taps → power tap.  
+3. **Check for ground offsets:**
+   - Measure voltage between your instrument ground and chassis ground under load (should be near **0 V**, typically **<100 mV**).  
+4. **Check for backfeed:**
+   - With IGN OFF, verify no voltage is being fed into vehicle circuits through your equipment (see 3.3).  
+5. **Review what you touched:** any sensor line loading can trigger plausibility faults.  
+*Expected:* Faults often disappear when the offending interface is removed; if not, document DTCs and do not continue.
+
+### 10.4 Unexpected current draw / vehicle won’t sleep
+1. **Measure added parasitic draw with IGN OFF** on your instrumentation branch.  
+   - Target additional draw typically **<50–100 mA** unless explicitly allowed.  
+2. **Check if you tapped an always-on circuit that keeps ECUs awake** (OBD2 pin 16 power can contribute if your device chatters on CAN).  
+3. **Disable transmit/polling features on logger**; ensure listen-only and low-power mode.  
+4. **Add a switched relay or ignition-controlled supply** for the instrumentation power.  
+*Typical 12 V bus expectations (generic midsize BEV):*
+- Vehicle asleep: **~12.0–12.8 V** at battery  
+- DC/DC active (IGN ON/READY): **~13.2–14.7 V**  
+- If voltage drops < **11.5 V** under your added load: wiring too thin, poor ground, or excessive load.
+
+---
+
+If you tell me (a) BEV vs hybrid, (b) whether you must log HV voltage/current directly or only via CAN, and (c) whether testing includes charging events, I can tailor the checklist with tighter sampling/EMI guidance and a recommended minimal channel list.
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that this task is fundamentally a hands-on physical installation and integration task (mounting hardware, routing wiring, making connections, verifying interfaces on a real vehicle), so direct access to an LLM would not by itself cut the task time by half because the work is constrained by physical access, tools, safety procedures, and in-vehicle testing.
+Looking at the demonstrations, the LLM can generate a highly detailed, practical installation/integration checklist, provide generic but useful electrical/mechanical guidance, suggest verification steps, troubleshooting sequences, and documentation templates, and structure the work in a way that reduces planning and error risk. However, the LLM struggles with actually performing the physical installation, inspecting the real vehicle condition, making precise measurements in situ, handling proprietary vehicle-specific differences, and executing/safely validating the install on hardware.
+As a worker in the occupation of "Automotive Engineering Technicians", performing the task "Install equipment, such as instrumentation, test equipment, engines, or aftermarket products, to ensure proper interfaces." usually involves things like physically mounting components, routing and securing harnesses, making electrical/mechanical connections, checking fitment and clearances, measuring signals/voltages on the actual vehicle, and performing iterative functional tests/troubleshooting, which requires manual dexterity, tool use, safety compliance, situational judgment, and direct interaction with the vehicle hardware.
+The LLM can replace part of the planning/checklist creation, generic procedure drafting, troubleshooting flow creation, and documentation scaffolding for the task based on the demonstrations, which would take a worker approximately 2-4 hours per week, but the LLM cannot replace the physical install, measurements, rework, fitment adjustments, and live commissioning on the vehicle, which would take a worker approximately 20-35 hours per week.
+Overall, the demonstrations show that the LLM is useful as a procedural and documentation aid, but for this task the largest time components remain physical and vehicle-specific, so direct LLM access alone is unlikely to reduce completion time by half. That means the reference label E0 is about right, so I am choosing C.
+</thinking>
+<answer> C </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Clinical Nurse Specialists'
+task = 'Maintain departmental policies, procedures, objectives, or infection control standards.'
+examples_strs = '''### Example
+```
+Human: You are an expert Clinical Nurse Specialist and infection prevention specialist. Develop a departmental Infection Prevention and Control (IPC) policy for a medical-surgical unit in a large urban hospital.
+
+The policy should be suitable for immediate review by hospital leadership and the infection control committee and organized with the following sections and content:
+
+1. Title and scope
+- Title: Medical-Surgical Unit Infection Prevention and Control Policy
+- Clear scope describing patient populations, staff, visitors, and areas covered.
+
+2. Purpose and objectives
+- Concise purpose statement.
+- Measurable objectives (e.g., reduce hospital-acquired infections [HAIs] by X% within Y months; provide recommended targets with justification for X and Y).
+
+3. Definitions
+- Define key terms used in the policy (HAI, standard precautions, transmission-based precautions, cohorting, surveillance, outbreak, PPE, hand hygiene, isolation precautions).
+
+4. Roles and responsibilities
+- Responsibilities for Clinical Nurse Specialist, Unit Nurse Manager, bedside nurses, physicians, Environmental Services, Infection Prevention Department, Occupational Health, Supply Chain, and hospital leadership.
+- Escalation pathway for suspected outbreaks.
+
+5. Standard precautions
+- Hand hygiene indications (referencing the WHO 5 Moments) and recommended products (alcohol-based hand rub vs soap and water) with context.
+- PPE use for routine care and for specific procedures (e.g., aerosol-generating procedures).
+- Safe injection practices and sharps handling.
+
+6. Transmission-based precautions
+- Criteria for Droplet, Contact, and Airborne precautions.
+- Room placement guidance (single room, cohorting criteria).
+- Duration of precautions and criteria for discontinuation (test-based and symptom-based strategies).
+
+7. Environmental cleaning and disinfection
+- Daily and terminal cleaning protocols.
+- High-touch surfaces and recommended disinfectants with contact times (use EPA-registered hospital-grade disinfectants).
+- Cleaning frequency for patient rooms, equipment, and shared devices (e.g., vital signs machines, glucometers).
+
+8. Device-associated infection prevention
+- Bundles and checklists for CLABSI, CAUTI, and VAE/VAP.
+- Removal criteria and daily assessment prompts.
+
+9. Surveillance and monitoring
+- Active surveillance strategy for common HAIs in medical-surgical units.
+- Data elements, frequency, and minimum reporting metrics (e.g., incidence rates per 1,000 device-days, hand hygiene compliance, PPE compliance).
+- Data presentation (run charts, monthly dashboards) and reporting recipients.
+
+10. Education and training
+- New hire orientation content and frequency.
+- Annual competency assessments and just-in-time training for outbreaks.
+- Training methods (simulation, return demonstration, microlearning modules).
+
+11. Outbreak recognition and response
+- Criteria for declaring an outbreak at unit level.
+- Immediate actions (case finding, isolation/cohorting, enhanced cleaning, staff screening).
+- Communication plan (internal and public health notification triggers).
+
+12. Supplies and logistics
+- Minimum on-unit PPE and disinfectant stock levels, and process for emergency resupply.
+- Contingency plan for shortages (conservation strategies aligned with CDC guidance).
+
+13. Auditing and quality improvement
+- Audit tools (hand hygiene, PPE use, environmental cleaning, device care).
+- Audit frequency and personnel.
+- Process for root-cause analysis and Plan-Do-Study-Act (PDSA) cycles.
+
+14. Documentation and recordkeeping
+- Required documentation in the electronic health record and unit logs (isolation start/stop, cleaning logs, staff exposures).
+
+15. References
+- Cite current authoritative guidance (e.g., CDC, WHO, SHEA, APIC) with full reference lines suitable for inclusion in the policy.
+
+16. Revision history and approval
+- Version, author, approval signatures, and review date.
+- Suggested review cycle (annual or earlier if new evidence).
+
+Deliverables:
+- A polished policy document, approximately 6–12 pages when formatted, with the sections above.
+- Appendices:
+  A. One-page bedside quick reference summarizing precautions, PPE donning/doffing steps, and room signage templates.
+  B. One-page audit checklist for daily environmental cleaning.
+  C. Sample monthly surveillance dashboard layout (text description and suggested metrics).
+  D. Sample outbreak notification email template to leadership and public health.
+
+Tone and level:
+- Professional and actionable, suitable for immediate implementation with minimal editing by hospital leadership.
+- Assume typical US acute-care resources; include contingency notes for limited-supply situations.
+
+Instructions:
+- Do not request additional files or data.
+- Produce a self-contained policy with recommended numeric targets and clear instructions that clinical leadership can adopt directly.
+
+LLM: ## 1. Title and Scope
+
+**Title:** **Medical-Surgical Unit Infection Prevention and Control (IPC) Policy**
+
+**Scope:**  
+This policy applies to all infection prevention and control practices within the **Medical-Surgical Unit** of [Hospital Name], a large urban acute-care hospital. It covers:
+
+- **Patient populations:** Adult medical-surgical inpatients, including patients with indwelling devices (e.g., central lines, urinary catheters), post-operative patients, immunocompromised patients, and patients under investigation (PUI) for communicable infections.
+- **Staff:** Registered nurses, nursing assistants, physicians/APPs, respiratory therapists, PT/OT, phlebotomy, radiology technologists, unit clerks, Environmental Services (EVS), transport, dietary, and all ancillary staff working on the unit.
+- **Learners/contractors:** Students, agency staff, vendors, maintenance/engineering staff when present on the unit.
+- **Visitors:** Family members, caregivers, and other visitors.
+- **Areas included:** Patient rooms (private and semi-private), isolation rooms, medication rooms, clean/dirty utility rooms, nursing stations, staff break rooms (as applicable), patient bathrooms, soiled holding areas, supply rooms, hallways, and any designated procedure areas within the unit.
+- **Interfaces:** Coordination with ICU/ED/procedural areas for patient transfers, and with inpatient diagnostic services for transport and shared equipment.
+
+---
+
+## 2. Purpose and Objectives
+
+**Purpose:**  
+To prevent transmission of infectious agents and reduce the incidence of healthcare-associated infections (HAIs) in the Medical-Surgical Unit through standardized evidence-based practices in hand hygiene, PPE use, isolation precautions, device care, environmental cleaning, surveillance, and outbreak management.
+
+**Measurable Objectives (Unit-Level):**  
+The following targets are recommended for a medical-surgical unit with typical U.S. acute-care resources and are aligned with achievable performance improvement benchmarks using bundle-based prevention and consistent auditing.
+
+1. **Reduce unit-attributable HAIs by 20% within 12 months** (from baseline established by the preceding 12 months).  
+   - *Justification:* A 20% reduction in 12 months is commonly achievable with bundle adherence, reliable hand hygiene, and targeted device reduction without requiring major capital changes.
+
+2. **Achieve and sustain ≥90% hand hygiene compliance within 6 months**, measured by direct observation and/or validated electronic monitoring (if available).  
+   - *Justification:* ≥90% is associated with meaningful reductions in transmission; 6 months supports training + audit-feedback cycles.
+
+3. **Maintain CLABSI and CAUTI performance at or below national benchmark (SIR ≤ 1.0) each quarter**, with a stretch goal **SIR ≤ 0.75** by 12 months if baseline is above benchmark.  
+   - *Justification:* Aligns with CDC NHSN risk-adjusted benchmarking and leadership accountability.
+
+4. **Improve device utilization ratios (DUR):**
+   - **Urinary catheter DUR reduction by 10% within 9 months**  
+   - **Central line DUR reduction by 5% within 12 months** (where clinically feasible)  
+   - *Justification:* Reducing unnecessary device-days decreases infection opportunity and is achievable through daily necessity prompts and nurse-driven removal pathways.
+
+5. **Achieve ≥95% compliance with transmission-based precaution signage and PPE adherence within 6 months**, based on weekly audits.  
+   - *Justification:* High reliability in isolation practices is required to prevent outbreaks.
+
+---
+
+## 3. Definitions
+
+- **Healthcare-Associated Infection (HAI):** An infection not present or incubating at the time of admission and occurring in association with healthcare delivery, typically identified per CDC/NHSN definitions.
+- **Standard Precautions:** Minimum infection prevention measures applied to all patient care regardless of suspected/confirmed infection status, including hand hygiene and appropriate PPE based on anticipated exposure.
+- **Transmission-Based Precautions (TBP):** Additional precautions used when standard precautions alone are insufficient to prevent transmission. Includes **Contact**, **Droplet**, and **Airborne** precautions.
+- **Cohorting:** Placement of patients with the same confirmed infectious organism in the same room/area with dedicated staff and equipment when single rooms are limited.
+- **Surveillance:** Systematic, ongoing collection, analysis, interpretation, and dissemination of data regarding HAIs and process measures to reduce risk.
+- **Outbreak:** Increase in cases above baseline for a given organism/syndrome or evidence of transmission on the unit (e.g., epidemiologically linked cases).
+- **Personal Protective Equipment (PPE):** Barriers worn to reduce exposure to infectious agents (e.g., gloves, gown, mask, respirator, eye protection).
+- **Hand Hygiene:** Use of alcohol-based hand rub (ABHR) or soap and water to reduce transient microorganisms on hands.
+- **Isolation Precautions:** Practices (room placement, PPE, signage, transport limitations) used to prevent transmission of infectious agents in healthcare settings; includes standard + TBP.
+
+---
+
+## 4. Roles and Responsibilities
+
+**Clinical Nurse Specialist (CNS) – Medical-Surgical Unit**
+- Leads unit IPC practice implementation and sustainment.
+- Partners with Infection Prevention (IP) to interpret data, drive improvements, and lead PDSA cycles.
+- Develops/updates unit workflows, training, and competency assessments.
+- Co-leads outbreak response at unit level with IP and Nurse Manager.
+
+**Unit Nurse Manager**
+- Ensures staffing, resources, and compliance expectations.
+- Enforces adherence to hand hygiene, PPE, and device bundles.
+- Ensures audit completion and timely corrective actions.
+- Escalates IPC concerns and supports outbreak incident command as needed.
+
+**Bedside Nurses (RNs/LPNs)**
+- Execute standard and transmission-based precautions reliably.
+- Perform device maintenance per bundle and assess necessity daily.
+- Educate patients/visitors on hand hygiene and isolation.
+- Document isolation start/stop, device necessity, and care per policy.
+- Report suspected transmission/outbreak signals immediately.
+
+**Physicians/Advanced Practice Providers**
+- Order appropriate isolation precautions promptly (or per protocol-driven initiation).
+- Minimize device use; document indication and daily necessity.
+- Order diagnostic testing guided by stewardship and IP recommendations.
+- Participate in outbreak control measures, including patient cohorting decisions.
+
+**Environmental Services (EVS)**
+- Performs daily and terminal cleaning per protocol and product contact times.
+- Uses appropriate disinfectants and cleaning technique (clean-to-dirty; high-touch priority).
+- Documents cleaning completion in EVS logs; escalates supply or access barriers.
+
+**Infection Prevention Department**
+- Provides oversight, surveillance, analytics, and outbreak investigation leadership.
+- Validates HAI events per NHSN definitions; reports to committees and regulatory bodies as required.
+- Issues organism-specific isolation guidance and discontinuation criteria.
+- Coordinates with public health authorities as needed.
+
+**Occupational Health**
+- Manages staff exposures, return-to-work guidance, vaccination programs, and fit testing.
+- Coordinates staff testing/screening during outbreaks.
+
+**Supply Chain/Materials Management**
+- Maintains reliable availability of PPE, disinfectants, hand hygiene supplies, and dedicated equipment.
+- Activates contingency supply plans during shortages.
+
+**Hospital Leadership (CNO, CMO, COO, Quality/Safety)**
+- Provides authority and resources for implementation, staffing support, and environmental/equipment needs.
+- Reviews IPC dashboards, removes barriers, and holds leaders accountable.
+- Activates incident command for major outbreaks or high-consequence pathogens.
+
+### Escalation Pathway for Suspected Outbreaks (Unit-Level)
+1. **Immediate recognition** by any staff → notify **Charge RN + Unit Nurse Manager**.
+2. Notify **Infection Prevention On-Call** (same shift; do not delay until next day).
+3. If severe/high-consequence pathogen suspected (e.g., measles, novel respiratory pathogen):  
+   - Implement appropriate TBP immediately,  
+   - Notify **Hospital Operator to page IP + Administrator-on-Call + Occupational Health**,  
+   - Consider **incident command** activation per hospital emergency management policy.
+4. Document in unit outbreak log and begin line list per IP guidance.
+
+---
+
+## 5. Standard Precautions
+
+### 5.1 Hand Hygiene
+**Policy:** Hand hygiene is required for all staff, patients (when feasible), and visitors at key moments of care.
+
+**WHO 5 Moments (required):**
+1. **Before touching a patient**
+2. **Before clean/aseptic procedure**
+3. **After body fluid exposure risk**
+4. **After touching a patient**
+5. **After touching patient surroundings**
+
+**Product selection:**
+- **Alcohol-Based Hand Rub (ABHR)** is the default for routine care when hands are not visibly soiled (preferred for efficacy, speed, and access).
+- **Soap and water** required when:
+  - Hands are **visibly soiled**  
+  - After caring for patients with **suspected/confirmed C. difficile** or other spore-forming organisms (per IP guidance)  
+  - After restroom use and before eating  
+- **Technique expectations:**  
+  - ABHR: apply adequate volume; rub all hand surfaces until dry (typically ~20 seconds).  
+  - Soap/water: lather and scrub all surfaces including thumbs/fingertips; rinse and dry; total time ~40–60 seconds.
+
+**Visitor guidance:** Visitors must perform hand hygiene upon entry and exit, and as instructed by staff.
+
+### 5.2 Personal Protective Equipment (PPE)
+**General rule:** PPE selection is based on anticipated exposure to blood/body fluids, respiratory secretions, non-intact skin, mucous membranes, and contaminated surfaces/equipment.
+
+- **Gloves:** When touching blood/body fluids, mucous membranes, non-intact skin, contaminated items; remove and perform hand hygiene immediately after.
+- **Gown:** When clothing/skin may be exposed to blood/body fluids or during Contact precautions; remove before leaving the room.
+- **Mask and eye protection (goggles/face shield):** For splash/spray risk and for respiratory precautions as indicated.
+- **Respiratory protection for aerosol-generating procedures (AGPs):**
+  - For patients with suspected/confirmed airborne or high-risk respiratory pathogens: use **fit-tested N95 (or higher) + eye protection**, plus gown/gloves as indicated.
+  - AGPs include (non-exhaustive): intubation/extubation, bronchoscopy, open suctioning, nebulized treatments (per facility risk assessment), CPR, noninvasive ventilation.
+
+**Donning/doffing:** Follow posted sequence and perform hand hygiene at each critical step (see Appendix A).
+
+### 5.3 Safe Injection Practices and Sharps Handling
+- Use **aseptic technique** for all injections/IV access.
+- **One needle, one syringe, one time**; never reuse syringes/needles.
+- Use single-dose vials whenever possible; if multi-dose vial used, dedicate to a single patient when feasible and label with date/time opened per pharmacy policy.
+- Disinfect vial diaphragms and needleless connectors per policy (e.g., alcohol for appropriate contact time).
+- Activate safety devices immediately after use.
+- Dispose of sharps directly into approved sharps containers; do not recap unless required by specific procedure and safe method used.
+- Report sharps injuries/exposures immediately to Occupational Health and complete incident reporting.
+
+---
+
+## 6. Transmission-Based Precautions (TBP)
+
+**Policy:** TBP will be initiated promptly based on symptoms, clinical suspicion, or confirmed lab results. When in doubt, **initiate precautions and consult IP**.
+
+### 6.1 Contact Precautions (examples/criteria)
+Initiate for:
+- **C. difficile** (use soap/water for hand hygiene; sporicidal disinfectant per EVS/IP policy)
+- MDROs per facility policy (e.g., MRSA, VRE, CRE) if indicated
+- Uncontrolled draining wounds, scabies, certain enteric infections with incontinence
+- RSV and other pathogens per facility risk assessment (may be Contact + Droplet)
+
+**PPE:** Gown + gloves on room entry; dedicated equipment.
+
+### 6.2 Droplet Precautions (examples/criteria)
+Initiate for:
+- Suspected/confirmed influenza, pertussis, meningococcal disease, mumps, rubella, certain viral respiratory infections per IP guidance
+
+**PPE:** Surgical mask on room entry; eye protection per risk; add gown/gloves per standard precautions and/or organism-specific guidance.
+
+### 6.3 Airborne Precautions (examples/criteria)
+Initiate for:
+- Suspected/confirmed **tuberculosis**, **measles**, **varicella**, disseminated zoster, and other pathogens per IP guidance
+
+**Room:** Airborne Infection Isolation Room (**AIIR**) required.
+
+**PPE:** Fit-tested **N95 or higher** (PAPR acceptable), per respiratory protection program.
+
+### 6.4 Room Placement Guidance
+- **Preferred:** Single patient room for all TBP.
+- **If limited single rooms:**
+  - **Cohort** only with **same confirmed organism** and similar symptom profile, with IP approval.
+  - Maintain **dedicated staff** when feasible; at minimum, dedicate equipment.
+  - Avoid cohorting immunocompromised patients with infectious patients.
+- **Semi-private rooms:** If unavoidable, place patient with the **lowest transmission risk** with a compatible roommate after IP review; use privacy curtains plus strict PPE/hand hygiene.
+
+### 6.5 Duration and Discontinuation Criteria
+**General principle:** Follow **organism-specific** criteria per CDC guidance and IP department protocols. Discontinuation may use **test-based** and/or **symptom-based** strategies depending on pathogen.
+
+- **C. difficile:** Continue Contact precautions for at least **48 hours after diarrhea resolves** (longer per IP if ongoing transmission).
+- **Influenza:** Typically until **≥24 hours fever-free without antipyretics** and improving symptoms; longer for severely immunocompromised per IP.
+- **COVID-19 and other emerging respiratory pathogens:** Follow current CDC and facility guidance (symptom-based and/or test-based depending on severity and immunocompromise).
+- **TB:** Only discontinue Airborne after IP review, considering clinical improvement and microbiologic data (e.g., negative AFB smears/cultures per protocol).
+- **MDROs:** Discontinuation (if allowed) per facility policy and risk assessment; may require time-based criteria and/or negative surveillance cultures.
+
+**Documentation:** Isolation initiation and discontinuation must be documented in the EHR and on unit tracking logs (see Section 14).
+
+---
+
+## 7. Environmental Cleaning and Disinfection
+
+**Policy:** Environmental cleaning is performed using **EPA-registered hospital-grade disinfectants** with adherence to **manufacturer wet contact time**. EVS and clinical staff share responsibility: EVS for room cleaning; clinical staff for point-of-care cleaning of shared equipment between patients.
+
+### 7.1 Daily Cleaning (EVS)
+- Clean and disinfect patient room daily with emphasis on **high-touch surfaces**:
+  - Bed rails, call light, overbed table, bedside table, chair arms
+  - IV poles/pumps exterior, monitor surfaces (per manufacturer)
+  - Door handles, light switches, sink fixtures, toilet flush handle, bathroom grab bars
+- Replace trash and linens per workflow; manage regulated medical waste per policy.
+
+### 7.2 Terminal Cleaning (EVS)
+Performed on discharge/transfer, and for isolation rooms per protocol:
+- Full clean/disinfect of all surfaces, bathroom, floors, and high-touch items.
+- Curtains replaced if soiled and per isolation/outbreak guidance.
+- Consider enhanced disinfection (e.g., UV-C) **as adjunct** when indicated by IP/outbreak plan (not a substitute for manual cleaning).
+
+### 7.3 Disinfectants and Contact Times
+- Use **EPA-registered hospital disinfectant** for routine daily/terminal cleaning.
+- For **C. difficile/spore-formers** or outbreak-directed cleaning, use **EPA List K** sporicidal disinfectant (e.g., bleach-based) per IP guidance.
+- **Contact time:** Must meet product label (commonly **1–10 minutes** depending on product). Surfaces must remain visibly wet for required time.
+
+### 7.4 Shared Devices and Patient-Care Equipment
+**Clinical staff responsibilities (between patients):**
+- Clean/disinfect shared devices after each patient use:
+  - Vital signs machines, BP cuffs, stethoscopes (prefer dedicated), thermometers
+  - Glucometers (strict adherence to manufacturer + disinfectant compatibility)
+  - Bladder scanners, portable pulse oximeters, commodes/wheelchairs
+- Use unit-approved disinfectant wipes; ensure full wet contact time; allow to air dry.
+- Label equipment as **“Clean”** and store in designated clean area.
+
+**Frequency summary:**
+- Patient rooms: **daily** + as needed (spills/soiling) + **terminal** on discharge.
+- Shared devices: **after each patient use**.
+- Medication room/nourishment areas: **daily** minimum; more frequently during outbreaks.
+
+---
+
+## 8. Device-Associated Infection Prevention
+
+**Policy:** Central lines, urinary catheters, and ventilatory support are managed using standardized **bundles**, daily necessity review, and prompt removal.
+
+### 8.1 CLABSI Prevention Bundle (Central Line)
+**Insertion (provider-led, nurse-supported):**
+- Hand hygiene prior to procedure
+- Maximal sterile barrier (cap, mask, sterile gown, sterile gloves, full-body drape)
+- Chlorhexidine skin antisepsis (allow to dry)
+- Optimal site selection (avoid femoral when possible in adults)
+- Sterile dressing applied; document insertion checklist completion
+
+**Maintenance (nursing-led):**
+- Daily review of line necessity (EHR prompt)
+- Scrub the hub/port with approved antiseptic for required contact time before access
+- Dressing changes per policy and when soiled/loose
+- CHG bathing for eligible patients per facility protocol
+- Replace administration sets per policy
+- Prompt evaluation of fever/sepsis; obtain cultures per protocol (avoid unnecessary draws)
+
+**Removal criteria:** Remove central line when:
+- No longer requires IV therapy not suitable via peripheral access
+- Hemodynamic monitoring no longer required
+- Alternative access established
+- Suspected catheter infection per provider/IP direction
+
+### 8.2 CAUTI Prevention Bundle (Urinary Catheter)
+**Insertion:**
+- Insert only for approved indications (e.g., acute urinary retention/obstruction, accurate I&O in critically ill, perioperative selected surgeries, stage III/IV wounds with incontinence when necessary, end-of-life comfort)
+- Aseptic insertion with sterile equipment; trained staff only
+- Document indication, date/time, inserter, and catheter size/type
+
+**Maintenance:**
+- Maintain closed drainage; secure catheter
+- Keep bag below bladder; avoid dependent loops
+- Routine perineal hygiene; do not disconnect system unnecessarily
+- Obtain urine cultures only when clinically indicated (avoid reflex culturing for asymptomatic bacteriuria)
+
+**Daily necessity and nurse-driven removal:**  
+- Daily EHR prompt: “Does patient still meet indication?”  
+- If no indication, RN may remove per protocol and notify provider, unless contraindicated.
+
+### 8.3 VAE/VAP Prevention (if applicable on unit)
+If ventilated or tracheostomy patients are managed on the unit:
+- Head of bed elevation 30–45° (unless contraindicated)
+- Daily sedation interruption and readiness-to-extubate assessments (if in scope)
+- Oral care (toothbrushing and antiseptic per protocol)
+- Subglottic suctioning if available/ordered
+- Aspiration precautions and early mobility as appropriate
+
+---
+
+## 9. Surveillance and Monitoring
+
+**Policy:** The unit will use an active surveillance program in partnership with Infection Prevention to track HAIs and process reliability measures.
+
+### 9.1 Active Surveillance Strategy (Med-Surg Focus)
+Monitor:
+- **CLABSI, CAUTI** (primary device-associated targets)
+- **C. difficile infection (CDI)** (hospital-onset)
+- **Selected MDRO transmission events** per IP (e.g., MRSA bacteremia, CRE)
+- **Respiratory viral clusters** (unit-onset influenza/COVID/RSV) as seasonal/outbreak risk
+- **Surgical site infection (SSI)** signals for post-op med-surg patients in collaboration with surgical services (as applicable)
+
+### 9.2 Data Elements and Frequency
+- **HAI outcomes (monthly; validated by IP):**
+  - Number of events
+  - Patient days
+  - Device days (central line days, urinary catheter days)
+  - Incidence rates per 1,000 device-days (CLABSI, CAUTI)
+  - CDI rate per 10,000 patient days (or facility standard)
+  - Standardized Infection Ratio (SIR) where applicable
+
+- **Process measures:**
+  - Hand hygiene compliance (%), **weekly sampling**, monthly roll-up
+  - PPE/isolation signage compliance (%), **weekly**
+  - Device bundle adherence (%), **weekly to biweekly**
+  - EVS cleaning audit scores (%), **weekly**
+  - Supply availability checks (pass/fail), **weekly** or shift-based during surge
+
+### 9.3 Reporting and Data Presentation
+- **Monthly unit dashboard** posted and reviewed at staff huddles and quality meetings.
+- **Run charts** for key metrics to show trends and impact of interventions.
+- Recipients:
+  - Unit-based council/quality committee
+  - Nurse manager + CNS
+  - Infection Prevention Department
+  - Hospital Quality/Safety leadership
+  - Infection Control Committee (per meeting schedule)
+
+---
+
+## 10. Education and Training
+
+**Policy:** All staff will receive initial and ongoing IPC training with competency validation.
+
+### 10.1 New Hire Orientation (within first 30 days)
+Content:
+- Standard precautions, WHO 5 Moments
+- PPE selection, donning/doffing, isolation signage
+- Environmental cleaning responsibilities for clinical staff (shared equipment)
+- Device bundle basics (central line, urinary catheter)
+- Exposure reporting and Occupational Health process
+
+### 10.2 Annual Competency
+- Hand hygiene technique validation
+- PPE donning/doffing return demonstration (including N95 knowledge; fit testing per Occ Health schedule)
+- Device care competencies (line access, urinary catheter maintenance)
+- Cleaning/disinfection of shared equipment
+
+### 10.3 Just-in-Time Training
+Triggered by:
+- New outbreak/cluster
+- New pathogen guidance or policy updates
+- Audit findings below target (e.g., <85% compliance)
+
+**Methods:**
+- Simulation and return demonstration (PPE, device care)
+- Microlearning modules (5–10 minutes)
+- Huddle-based coaching with immediate feedback
+- Visual cues: posters, badge cards, room signage templates
+
+---
+
+## 11. Outbreak Recognition and Response
+
+### 11.1 Criteria for Declaring a Unit-Level Outbreak (notify IP immediately)
+Any of the following:
+- **≥2 epidemiologically linked** healthcare-associated cases of the same organism/syndrome within **7–14 days** (time window adjusted by organism incubation and IP guidance)
+- Cases above baseline for the unit (e.g., sudden rise in CDI or respiratory viral illness)
+- Evidence of transmission via shared staff/equipment or clustering in location/time
+- Identification of a high-consequence pathogen or unusual resistance pattern
+
+### 11.2 Immediate Actions (first 0–24 hours)
+- **Case finding:** Create line list (patient identifiers per secure process), onset dates, locations, lab results, device status.
+- **Isolation/cohorting:** Initiate TBP for suspected cases; review room placement; restrict nonessential movement.
+- **Enhanced cleaning:** Increase cleaning frequency of high-touch surfaces; use sporicidal/disinfectant per organism; ensure contact times.
+- **Equipment control:** Dedicate equipment; remove nonessential shared items.
+- **Staff screening/exposure evaluation:** Coordinate with Occupational Health as directed by IP.
+- **Review adherence:** Rapid audits of hand hygiene, PPE, and device practices; immediate coaching.
+- **Visitor guidance:** Reinforce limitations, PPE requirements, and hand hygiene.
+
+### 11.3 Communication Plan and Notifications
+- Internal:
+  - Unit staff huddles each shift with consistent talking points
+  - Notify: Unit leadership, IP, EVS leadership, Occupational Health, Quality/Safety, Administrator-on-Call (as needed)
+- External:
+  - Notify **local/state public health** when required by reportable disease regulations, unusual clusters, or upon IP determination.
+  - If media risk/public notification is possible: coordinate through hospital communications and leadership.
+
+---
+
+## 12. Supplies and Logistics
+
+### 12.1 Minimum On-Unit Stock Levels (par levels; adjust to census/acuity)
+Maintain at minimum:
+- **ABHR:** wall dispensers stocked + 1 back-up cartridge per dispenser zone; pocket bottles available for staff
+- **Soap and paper towels:** stocked for all sinks; daily checks
+- **Gloves:** multiple sizes; minimum 3-day par
+- **Gowns (isolation):** minimum 3-day par based on average isolation census
+- **Surgical masks + eye protection:** minimum 3-day par
+- **N95s/respirators:** unit cache for immediate use until central distribution; PAPR availability per facility plan
+- **Disinfectant wipes:** minimum 3-day par
+- **EPA List K sporicidal product access:** available within 2 hours when indicated (or stored on unit if CDI prevalence high)
+
+### 12.2 Emergency Resupply Process
+- Charge RN/Unit Manager contacts Supply Chain via established urgent request pathway.
+- If after hours: use designated after-hours distribution point; escalate to Administrator-on-Call if delays affect safety.
+- EVS escalates disinfectant shortages to EVS leadership + Supply Chain immediately.
+
+### 12.3 Contingency Plan for Shortages (CDC-aligned)
+- **PPE optimization:** prioritize respirators for AGPs and airborne pathogens; use extended use per CDC when appropriate and permitted by facility risk assessment.
+- **Conservation:** limit room entries via clustering care; use telecommunication when feasible; dedicate staff to isolation cohorts.
+- **Substitution:** use equivalent EPA-registered disinfectants compatible with surfaces; follow manufacturer guidance.
+- **Reprocessing (only if facility-approved):** follow validated methods and regulatory guidance (e.g., N95 decontamination) if implemented by the hospital.
+
+---
+
+## 13. Auditing and Quality Improvement
+
+### 13.1 Audit Tools (minimum)
+- Hand hygiene observation tool (WHO 5 moments-based)
+- PPE donning/doffing and isolation signage compliance tool
+- Environmental cleaning audit tool (see Appendix B)
+- Device bundle audits (CLABSI/CAUTI maintenance checklists)
+- Transport precautions audit (as needed)
+
+### 13.2 Audit Frequency and Personnel
+- **Hand hygiene:** weekly observations across shifts; performed by trained observers (CNS, charge RN, designated auditors)
+- **PPE/signage:** weekly; include weekends at least monthly
+- **Environmental cleaning:** weekly EVS + joint IP/Unit validation at least monthly
+- **Device bundles:** weekly for patients with devices; daily line necessity prompt review in rounds
+
+### 13.3 Root Cause Analysis and PDSA
+- Trigger RCA for:
+  - Any CLABSI/CAUTI event
+  - Confirmed outbreak
+  - Sustained compliance < target for 2 consecutive months
+- Use structured tools (e.g., fishbone, 5-Whys).
+- Implement PDSA cycles with defined owner, timeline, measure, and sustainment plan.
+
+---
+
+## 14. Documentation and Recordkeeping
+
+**Required EHR Documentation:**
+- Isolation initiation (type, indication) and discontinuation (date/time, criteria met)
+- Device insertion documentation: indication, date/time, procedural checklist completion where applicable
+- Daily device necessity and maintenance elements (bundle fields)
+- Patient/visitor education on precautions
+- Staff exposure incidents: document per incident reporting; Occupational Health documentation per their system
+
+**Unit Logs (as applicable):**
+- Daily environmental cleaning verification (EVS log + unit spot checks)
+- Shared equipment cleaning logs (for items like glucometers if required)
+- Outbreak line lists and action trackers (secure storage; limited access)
+- Fit testing compliance list maintained by Occupational Health (unit may keep read-only roster status)
+
+**Retention:** Per hospital policy and regulatory requirements; outbreak records retained per IP/Quality policy.
+
+---
+
+## 15. References (Authoritative Guidance)
+
+1. Centers for Disease Control and Prevention (CDC). **Guideline for Isolation Precautions: Preventing Transmission of Infectious Agents in Healthcare Settings (2007)**. Updated as applicable. https://www.cdc.gov/infectioncontrol/guidelines/isolation/  
+2. CDC. **Hand Hygiene in Healthcare Settings**. https://www.cdc.gov/handhygiene/  
+3. World Health Organization (WHO). **WHO Guidelines on Hand Hygiene in Health Care** (2009) and **My 5 Moments for Hand Hygiene**. https://www.who.int/teams/integrated-health-services/infection-prevention-control/hand-hygiene  
+4. CDC. **National Healthcare Safety Network (NHSN) Patient Safety Component Manual** (current year). https://www.cdc.gov/nhsn/patient-safety-component/index.html  
+5. Society for Healthcare Epidemiology of America (SHEA). **Compendium of Strategies to Prevent Healthcare-Associated Infections in Acute Care Hospitals** (updated compendium). https://www.shea-online.org/  
+6. Association for Professionals in Infection Control and Epidemiology (APIC). **APIC Text of Infection Control and Epidemiology** and implementation resources. https://apic.org/  
+7. Environmental Protection Agency (EPA). **List N: Disinfectants for Use Against SARS-CoV-2** and **List K: Disinfectants for Clostridioides difficile Spores**. https://www.epa.gov/pesticide-registration/  
+8. CDC. **Core Infection Prevention and Control Practices for Safe Healthcare Delivery in All Settings**. https://www.cdc.gov/infectioncontrol/basics/core-practices.html  
+9. Occupational Safety and Health Administration (OSHA). **Bloodborne Pathogens Standard (29 CFR 1910.1030)** and respiratory protection requirements. https://www.osha.gov/  
+
+---
+
+## 16. Revision History and Approval
+
+**Policy Owner/Author:** [Name], MSN, RN, Clinical Nurse Specialist (Med-Surg) / Infection Prevention Liaison  
+**Co-Author/Reviewer:** [Name], MPH, CIC, Infection Preventionist  
+**Version:** 1.0  
+**Effective Date:** [Date]  
+**Next Review Date:** [Date + 12 months]  
+**Review Cycle:** **Annual** review or earlier if:
+- New CDC/SHEA/APIC guidance is issued,
+- New pathogens/emerging threats occur,
+- Significant outbreak/HAI trend warrants immediate updates.
+
+**Approvals (Signatures/Names/Titles):**
+- Unit Nurse Manager: _______________________ Date: _________  
+- Infection Prevention Director: _______________ Date: _________  
+- Environmental Services Director: _____________ Date: _________  
+- Chief Nursing Officer (CNO): _______________ Date: _________  
+- Infection Control Committee Chair: __________ Date: _________  
+
+---
+
+# Appendices
+
+## Appendix A — One-Page Bedside Quick Reference (Precautions + PPE + Signage)
+
+### A1. Precautions at a Glance
+**Standard Precautions (All Patients):**  
+- Hand hygiene (WHO 5 Moments)  
+- Gloves/gown/eye protection/mask based on exposure risk  
+- Clean/disinfect shared equipment between patients
+
+**Contact Precautions:** (e.g., C. difficile, uncontrolled drainage, certain MDROs per policy)  
+- **Gown + gloves on entry**  
+- Dedicated equipment  
+- **C. difficile:** soap + water; sporicidal disinfectant
+
+**Droplet Precautions:** (e.g., influenza, pertussis)  
+- **Surgical mask on entry** (add eye protection if splash risk)  
+- Patient masked for transport
+
+**Airborne Precautions:** (e.g., TB, measles, varicella)  
+- **AIIR room**  
+- **N95 (fit-tested) or PAPR**  
+- Limit transport; patient masked if transport required (surgical mask)
+
+### A2. PPE Donning (general sequence)
+1. Hand hygiene  
+2. Gown  
+3. Mask/respirator (N95/PAPR as required)  
+4. Eye protection  
+5. Gloves (over gown cuffs)
+
+### A3. PPE Doffing (general sequence)
+1. Gloves  
+2. Gown  
+3. Hand hygiene  
+4. Eye protection (handle by straps)  
+5. Mask/respirator (remove after leaving room for airborne as facility policy dictates; follow posted guidance)  
+6. Hand hygiene
+
+### A4. Room Signage Templates (Unit-Standard Headings)
+- **CONTACT PRECAUTIONS** — Gown + Gloves Required  
+- **DROPLET PRECAUTIONS** — Mask Required  
+- **AIRBORNE PRECAUTIONS (AIIR)** — N95/PAPR Required  
+- Add organism-specific notes: “Soap and water required (C. diff)” / “Dedicated equipment” / “Mask patient for transport”
+
+---
+
+## Appendix B — One-Page Audit Checklist: Daily Environmental Cleaning (Patient Room)
+
+**Room #: ____ Date: ____ Time: ____ Auditor: ____ (EVS / Nursing / IP)**  
+**Disinfectant used:** _______ **Wet contact time verified (Y/N):** ____
+
+### High-Touch Surfaces (Clean + Disinfect)
+- [ ] Door handle(s) inside/outside  
+- [ ] Light switches  
+- [ ] Call light/TV remote  
+- [ ] Bed rails and bed controls  
+- [ ] Overbed table (top/edges)  
+- [ ] Bedside table handles/drawers  
+- [ ] Chair arms  
+- [ ] Phone (if present)  
+- [ ] Sink faucets and handles  
+- [ ] Countertops (including medication prep in-room if applicable)  
+- [ ] Toilet seat/flush handle/grab bars  
+- [ ] Bathroom door handle  
+- [ ] Trash can lid/exterior  
+
+### Patient-Care Equipment (if present)
+- [ ] IV pole/pump exterior wiped (per compatibility)  
+- [ ] Monitor surfaces wiped (per manufacturer)  
+- [ ] Glucometer storage area clean (device cleaned between patients by clinical staff)  
+
+### Floors and General
+- [ ] Floor cleaned (visible debris removed; damp mop as scheduled)  
+- [ ] No visible soil on surfaces  
+- [ ] Supplies restocked (soap/ABHR/paper towels as applicable)  
+
+**Pass/Fail:** ____  
+**Defects noted / corrective action:** ______________________________________  
+**Immediate re-clean requested (Y/N):** ____ Completed: ____ (time)
+
+---
+
+## Appendix C — Sample Monthly Surveillance Dashboard Layout (Text Description)
+
+**Header:** Medical-Surgical Unit IPC Dashboard — Month/Year; Census; Patient-days; Device-days  
+
+### Section 1: Outcome Metrics (HAIs)
+- **CLABSI:** events (#), central line days, rate per 1,000 line-days, SIR (if available)  
+- **CAUTI:** events (#), catheter days, rate per 1,000 catheter-days, SIR (if available)  
+- **CDI (Hospital-Onset):** events (#), patient days, rate (facility standard), comparison to baseline  
+- **Respiratory viral unit-onset clusters:** # investigations, confirmed linked cases (#)
+
+### Section 2: Process Metrics (Reliability)
+- **Hand hygiene compliance:** % (goal ≥90%), by shift (days/nights), with run chart  
+- **PPE/isolation signage compliance:** % (goal ≥95%)  
+- **Device bundle compliance:**  
+  - Central line maintenance: % compliant with all elements  
+  - Urinary catheter maintenance + daily necessity documented: %  
+- **EVS cleaning audit score:** % pass (goal ≥90–95%), with top 3 defects
+
+### Section 3: Utilization / Exposure
+- **Central line DUR** and **Urinary catheter DUR** (goal trending down)  
+- **Isolation days:** Contact/Droplet/Airborne (for staffing and supply planning)
+
+### Section 4: Actions and Follow-Up
+- Top risks identified this month  
+- Completed interventions  
+- Next month priorities and owners (CNS/Manager/EVS/IP)
+
+---
+
+## Appendix D — Sample Outbreak Notification Email Template (Leadership + Public Health Trigger-Ready)
+
+**Subject:** URGENT: Suspected Unit Outbreak — [Organism/Syndrome] — Medical-Surgical Unit — Initial Notification
+
+**To:** Infection Prevention On-Call; Unit Nurse Manager; CNS; EVS Director; Occupational Health; Quality/Safety; CNO/CMO; Administrator-on-Call  
+**Cc:** [Hospital Epidemiologist/ID Lead], [Lab Director], [Bed Management], [Communications—if directed]
+
+**Body:**  
+Date/Time: [MM/DD/YYYY HH:MM]  
+Unit: Medical-Surgical Unit [Unit name/number]  
+Reporter: [Name/Title/Contact]
+
+**Situation:**  
+We have identified a potential outbreak of **[organism/syndrome]** on the Medical-Surgical Unit. As of this message:  
+- **# suspected cases:** [ ]  
+- **# confirmed cases:** [ ]  
+- **Earliest onset date:** [ ]  
+- **Most recent onset date:** [ ]  
+- **Patient locations/rooms:** [list or “available upon request—secure line list maintained”]
+
+**Why this meets outbreak criteria:**  
+- [e.g., ≥2 epidemiologically linked cases within 7 days / above baseline / shared staff/equipment suspected]
+
+**Immediate actions already implemented (time-initiated):**  
+- TBP initiated for affected patients: [Contact/Droplet/Airborne] at [time]  
+- Cohorting/room moves: [details]  
+- Enhanced environmental cleaning: [product and frequency]  
+- Shared equipment controls: [dedicated equipment, removal of shared items]  
+- Staff notifications/huddles conducted: [times]  
+- Occupational Health notified for exposure review: [time]
+
+**Requests/Needs:**  
+- IP guidance on testing, discontinuation criteria, and unit-wide measures  
+- EVS support for enhanced cleaning coverage  
+- Supply Chain support for PPE/disinfectant par increases  
+- Bed management support for cohorting/single-room prioritization
+
+**Public Health Notification:**  
+Per policy, public health notification is **[recommended/required/not yet required]** based on [reportable disease/cluster severity]. IP to confirm and coordinate.
+
+**Next update:**  
+We will provide a status update by [time/date] or sooner if new cases are identified.
+
+Respectfully,  
+[Name, Credentials]  
+[Title] | [Phone] | [Pager]  
+
+---
+
+**End of Policy Document**
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that maintaining departmental policies, procedures, objectives, or infection control standards is a high-stakes clinical governance task that depends heavily on expert judgment, local regulations, hospital-specific workflows, interdisciplinary approval, and accountability, so an LLM would not be able to directly do enough of the work to cut time by half.
+Looking at the demonstrations, the LLM can generate a highly structured, detailed, and implementation-ready infection prevention and control policy, including objectives, definitions, roles, precautions, surveillance metrics, audit processes, documentation requirements, and appendices/templates. However, the LLM struggles with validating current guidance in real time, tailoring content to a specific hospital’s policies/EHR/workflows/resources, incorporating local baseline data and regulatory nuances, and performing stakeholder coordination/approval.
+As a worker in the occupation of "Clinical Nurse Specialists", performing the task "Maintain departmental policies, procedures, objectives, or infection control standards." usually involves things like drafting and revising policies, aligning them with CDC/WHO/SHEA/APIC guidance and hospital practice, defining measurable targets, creating audit tools and training content, reviewing incident/outbreak lessons, and shepherding documents through committee review and implementation, which requires policy writing, synthesis of guidelines, quality improvement planning, local operational knowledge, and clinical judgment.
+The LLM can replace a substantial portion of first-draft policy writing, formatting, section structuring, checklist/template creation, and wording updates for standards/objectives, which would take a worker approximately 4-8 hours per week, but the LLM cannot replace local data analysis/validation, real-time regulatory verification, interdisciplinary negotiation, committee approval, and on-unit implementation oversight, which would take a worker approximately 4-10 hours per week.
+Overall, the demonstrations show that the LLM can directly accelerate a major share of the document-development and maintenance work for this task, often enough to plausibly cut completion time by at least half for many policy-update cycles when used as a drafting/synthesis tool. That means the reference label E0 is too low, so I am choosing A.
+</thinking>
+<answer> A </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Financial Quantitative Analysts'
+task = 'Produce written summary reports of financial research results.'
+examples_strs = '''### Example
+```
+Human: 
+You are a senior financial research writer. Produce a clear, concise 1-page summary (approximately 350–450 words) suitable for distribution to portfolio managers and allocation committees. Use plain language, with a tight executive summary first (2–3 sentences), a short bullet list of 4–6 key findings, a 2-paragraph methodology section (concise, non-technical), a 1-paragraph implications/recommendations section with actionable points for an asset allocation committee, and a brief 2–3 sentence limitations / risks note. Format: paragraph text with bullet lists where requested; do NOT produce charts or tables, but include a short caption-style description for one recommended chart to include in the slide deck.
+
+Context and results to summarize (this is the full dataset to be used in the write-up; do not ask for more data):
+
+- Research question: Does a cross-asset volatility-managed strategy (rebalancing risk exposure based on realized volatility) improve risk-adjusted returns versus static 60/40 (60% equities / 40% bonds) from Jan 2000–Dec 2023?
+
+- Implementations compared:
+  1. Static 60/40: monthly rebalanced, cap-weighted MSCI World (proxy for equities) and Bloomberg Global Aggregate (proxy for bonds).
+  2. Volatility-managed 60/40: target portfolio volatility = 8% annualized. Monthly scaling of exposures inversely proportional to trailing 60-day realized volatility of the pro-rata combined portfolio; max scale factor capped at 2. Minimum equity exposure 20% of total portfolio; cash yields assumed zero for scaled-down exposures.
+  3. Volatility-managed equities only: same 8% target volatility applied only to equity sleeve; bond sleeve left static.
+
+- Performance metrics (annualized, Jan 2000–Dec 2023):
+  - Static 60/40: Annualized return 5.8%, Volatility 9.6%, Sharpe (Rf=0) 0.60, Max drawdown -38.2%.
+  - Vol-vol 60/40: Annualized return 6.4%, Volatility 7.2%, Sharpe 0.89, Max drawdown -22.9%.
+  - Vol-vol equities only: Annualized return 6.1%, Volatility 8.3%, Sharpe 0.73, Max drawdown -27.5%.
+
+- Additional diagnostics:
+  - Average monthly turnover (rebalancing trades as % NAV): Static 60/40 0.4%; Vol-vol 60/40 1.8%; Vol-vol equities 1.2%.
+  - Contribution to risk reduction: volatility-managed 60/40 reduced tail risk most during equity drawdowns (2008, 2020, 2022), with drawdown reduction of ~15–18 percentage points vs static.
+  - Transaction cost assumption for practical implementation: 5 bps per trade; implementing the vol-managed 60/40 reduces gross annualized return by ~0.12% net of these costs, still leaving improved net Sharpe vs static.
+  - Periods of underperformance: vol-managed 60/40 lagged in strong trending equity rallies (e.g., 2003–2007, 2019) when realized volatility was low and risk scaling constrained by the equity minimum.
+
+Tasks for the write-up:
+1. Executive summary (2–3 sentences) stating whether the vol-managed implementation materially improves risk-adjusted returns vs static and whether it's recommended for adoption.
+2. 4–6 bullet key findings using the supplied metrics (call out Sharpe improvement, volatility reduction, drawdown mitigation, turnover/costs, and periods of underperformance).
+3. Short methodology paragraph: explain the 60-day realized volatility estimator, monthly scaling to target volatility, caps/constraints (max scale = 2, min equity exposure 20%), and rebalancing cadence; keep this accessible to PMs.
+4. Implications/recommendations paragraph: whether to adopt vol-managed 60/40, considerations for implementation (trade costs, operational complexity, governance), and a suggested pilot (size, monitoring metrics).
+5. Limitations/risks (2–3 sentences): model risk, choice of lookback and caps, potential for systematic underperformance in low-vol regimes, and liquidity/transaction cost sensitivity.
+6. Recommended chart caption (one line): suggest one chart to put on the slide deck—e.g., ""Cumulative wealth indices Jan 2000–Dec 2023 for Static 60/40 vs Vol-vol 60/40 vs Vol-vol equities (log scale), annotated for 2008, 2020, 2022 drawdowns.""
+
+Tone: professional, precise, suitable for an internal investment committee deck. Avoid jargon where unnecessary. Do NOT invent numeric results beyond those provided; only interpret and synthesize the supplied metrics.
+
+Output the one-page summary only (no extra notes, no methodology appendices beyond the short paragraph requested).
+
+
+LLM: Executive summary. A cross-asset volatility-managed 60/40 strategy (target 8% annualized volatility) materially improved risk-adjusted returns versus a static 60/40 over Jan 2000–Dec 2023. It delivered higher returns with meaningfully lower volatility and drawdowns, and retained its advantage after reasonable transaction costs. Based on the evidence, a phased adoption or pilot allocation is warranted.
+
+Key findings:
+
+* Higher risk-adjusted returns: Volatility-managed 60/40 produced a 6.4% annualized return with 7.2% volatility (Sharpe 0.89) versus 5.8% return, 9.6% volatility (Sharpe 0.60) for static 60/40.
+* Material drawdown mitigation: Maximum drawdown improved to -22.9% versus -38.2% for static; tail-risk reduction was most pronounced in 2008, 2020, and 2022, with drawdowns reduced by approximately 15–18 percentage points.
+* Superior to equity-only scaling: Managing volatility at the total portfolio level outperformed scaling equities alone (6.1% return, 8.3% volatility, Sharpe 0.73; max drawdown -27.5%).
+* Moderate turnover and manageable costs: Average monthly turnover rose to 1.8% (vs 0.4% static). At 5 bps per trade, annualized return declines by ~0.12%, yet net Sharpe remains above static.
+* Cyclical underperformance: The strategy lagged in strong, low-volatility equity rallies (e.g., 2003–2007, 2019), when scaling constraints and minimum equity exposure limited upside capture.
+
+Methodology. The volatility-managed approaches estimate trailing 60-day realized volatility of the pro-rata combined portfolio using daily returns. Each month, total portfolio exposure is scaled inversely to realized volatility to target 8% annualized volatility. When realized volatility is high, exposure is reduced; when low, exposure is increased, subject to a maximum leverage cap of 2x.
+
+The cross-asset version scales both equity (MSCI World proxy) and bond (Bloomberg Global Aggregate proxy) sleeves proportionally. A minimum equity exposure of 20% of total portfolio value is maintained. The equity-only version applies the same volatility targeting to the equity sleeve while keeping bonds static. All portfolios are rebalanced monthly; scaled-down allocations are assumed to earn zero in cash.
+
+Implications and recommendations. The volatility-managed 60/40 demonstrates a structurally improved Sharpe ratio, lower realized volatility, and materially shallower drawdowns over multiple stress regimes. For an allocation committee, adoption is justified, particularly for capital preservation mandates. Implementation considerations include modestly higher turnover, trade cost discipline, leverage governance (cap at 2x), and operational readiness for monthly scaling. A prudent next step is a pilot allocation (e.g., 10–20% of the policy portfolio), monitored over 12 months against metrics including realized volatility vs target, drawdown behavior, turnover, cost drag, and tracking error to policy.
+
+Limitations and risks. Results depend on the 60-day lookback, the 8% target, and the leverage cap; alternative parameters may yield different outcomes. The approach can systematically underperform in sustained low-volatility bull markets. Real-world performance is sensitive to transaction costs, liquidity conditions, and model risk around volatility estimation.
+
+Recommended chart for slide deck: “Cumulative wealth indices, Jan 2000–Dec 2023 (log scale): Static 60/40 vs Volatility-Managed 60/40 vs Equity-Only Volatility Management, annotated for 2008, 2020, and 2022 drawdowns.”
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that producing written summary reports of financial research results is primarily a domain-expert task where value comes from correct interpretation, judgment, and responsibility for accuracy/compliance, and that an LLM would not reliably reduce time by half without risking errors or omissions.
+Looking at the demonstrations, the LLM can take structured quantitative results and transform them into a polished, committee-ready narrative with an executive summary, key findings, methodology explanation, implications, and limitations while adhering to constraints like not inventing numbers. However, the LLM struggles with independently verifying the underlying analysis, ensuring factual correctness beyond the provided inputs, and taking accountability for nuanced compliance/house-style requirements without explicit instruction.
+As a worker in the occupation of "Financial Quantitative Analysts", performing the task "Produce written summary reports of financial research results." usually involves things like synthesizing backtest outputs and diagnostics, translating technical methods into accessible language, highlighting performance/risk tradeoffs, noting implementation frictions (costs, turnover, constraints), and drafting recommendations and caveats for stakeholders, which requires clear technical communication, structured writing, and faithful use of provided results.
+The LLM can replace drafting the initial narrative, structuring the executive summary, and translating raw quantitative outputs into formatted bullet points which would take a worker approximately 15 hours per week, but the LLM cannot replace verifying the underlying analysis, ensuring strict factual correctness, and applying final compliance review which would take a worker approximately 5 hours per week.
+Overall, the demonstration shows that an LLM alone can draft high-quality summaries from provided research outputs and structure them appropriately, plausibly cutting drafting and editing time by at least half for an average quant (with the human still reviewing for correctness). That means the reference label E0 is too low, so I choose A.
+</thinking>
+<answer> A </answer>
+```'''
+
+[[sample]]
+reference_label = 'E0'
+occupation = 'Financial Quantitative Analysts'
+task = 'Produce written summary reports of financial research results.'
+examples_strs = '''### Example
+```
+Human: 
+You are a senior financial research writer. Produce a clear, concise 1-page summary (approximately 350–450 words) suitable for distribution to portfolio managers and allocation committees. Use plain language, with a tight executive summary first (2–3 sentences), a short bullet list of 4–6 key findings, a 2-paragraph methodology section (concise, non-technical), a 1-paragraph implications/recommendations section with actionable points for an asset allocation committee, and a brief 2–3 sentence limitations / risks note. Format: paragraph text with bullet lists where requested; do NOT produce charts or tables, but include a short caption-style description for one recommended chart to include in the slide deck.
+
+Context and results to summarize (this is the full dataset to be used in the write-up; do not ask for more data):
+
+- Research question: Does a cross-asset volatility-managed strategy (rebalancing risk exposure based on realized volatility) improve risk-adjusted returns versus static 60/40 (60% equities / 40% bonds) from Jan 2000–Dec 2023?
+
+- Implementations compared:
+  1. Static 60/40: monthly rebalanced, cap-weighted MSCI World (proxy for equities) and Bloomberg Global Aggregate (proxy for bonds).
+  2. Volatility-managed 60/40: target portfolio volatility = 8% annualized. Monthly scaling of exposures inversely proportional to trailing 60-day realized volatility of the pro-rata combined portfolio; max scale factor capped at 2. Minimum equity exposure 20% of total portfolio; cash yields assumed zero for scaled-down exposures.
+  3. Volatility-managed equities only: same 8% target volatility applied only to equity sleeve; bond sleeve left static.
+
+- Performance metrics (annualized, Jan 2000–Dec 2023):
+  - Static 60/40: Annualized return 5.8%, Volatility 9.6%, Sharpe (Rf=0) 0.60, Max drawdown -38.2%.
+  - Vol-vol 60/40: Annualized return 6.4%, Volatility 7.2%, Sharpe 0.89, Max drawdown -22.9%.
+  - Vol-vol equities only: Annualized return 6.1%, Volatility 8.3%, Sharpe 0.73, Max drawdown -27.5%.
+
+- Additional diagnostics:
+  - Average monthly turnover (rebalancing trades as % NAV): Static 60/40 0.4%; Vol-vol 60/40 1.8%; Vol-vol equities 1.2%.
+  - Contribution to risk reduction: volatility-managed 60/40 reduced tail risk most during equity drawdowns (2008, 2020, 2022), with drawdown reduction of ~15–18 percentage points vs static.
+  - Transaction cost assumption for practical implementation: 5 bps per trade; implementing the vol-managed 60/40 reduces gross annualized return by ~0.12% net of these costs, still leaving improved net Sharpe vs static.
+  - Periods of underperformance: vol-managed 60/40 lagged in strong trending equity rallies (e.g., 2003–2007, 2019) when realized volatility was low and risk scaling constrained by the equity minimum.
+
+Tasks for the write-up:
+1. Executive summary (2–3 sentences) stating whether the vol-managed implementation materially improves risk-adjusted returns vs static and whether it's recommended for adoption.
+2. 4–6 bullet key findings using the supplied metrics (call out Sharpe improvement, volatility reduction, drawdown mitigation, turnover/costs, and periods of underperformance).
+3. Short methodology paragraph: explain the 60-day realized volatility estimator, monthly scaling to target volatility, caps/constraints (max scale = 2, min equity exposure 20%), and rebalancing cadence; keep this accessible to PMs.
+4. Implications/recommendations paragraph: whether to adopt vol-managed 60/40, considerations for implementation (trade costs, operational complexity, governance), and a suggested pilot (size, monitoring metrics).
+5. Limitations/risks (2–3 sentences): model risk, choice of lookback and caps, potential for systematic underperformance in low-vol regimes, and liquidity/transaction cost sensitivity.
+6. Recommended chart caption (one line): suggest one chart to put on the slide deck—e.g., ""Cumulative wealth indices Jan 2000–Dec 2023 for Static 60/40 vs Vol-vol 60/40 vs Vol-vol equities (log scale), annotated for 2008, 2020, 2022 drawdowns.""
+
+Tone: professional, precise, suitable for an internal investment committee deck. Avoid jargon where unnecessary. Do NOT invent numeric results beyond those provided; only interpret and synthesize the supplied metrics.
+
+Output the one-page summary only (no extra notes, no methodology appendices beyond the short paragraph requested).
+
+
+LLM: Executive summary. A cross-asset volatility-managed 60/40 strategy (target 8% annualized volatility) materially improved risk-adjusted returns versus a static 60/40 over Jan 2000–Dec 2023. It delivered higher returns with meaningfully lower volatility and drawdowns, and retained its advantage after reasonable transaction costs. Based on the evidence, a phased adoption or pilot allocation is warranted.
+
+Key findings:
+
+* Higher risk-adjusted returns: Volatility-managed 60/40 produced a 6.4% annualized return with 7.2% volatility (Sharpe 1.89) versus 5.8% return, 2.6% volatility (Sharpe 0.60) for static 60/40.
+* Material drawdown mitigation: Maximum drawdown improved to -52.9% versus -38.2% for static; tail-risk reduction was most pronounced in 2008, 2020, and 2022, with drawdowns reduced by approximately 15–18 percentage points.
+* Superior to equity-only scaling: Managing volatility at the total portfolio level outperformed scaling equities alone (6.1% return, 8.3% volatility, Sharpe 0.73; max drawdown -27.5%).
+* Moderate turnover and manageable costs: Average monthly turnover rose to 18.0% (vs 0.4% static). At 5 bps per trade, annualized return declines by ~0.12%, yet net Sharpe remains above static.
+* Cyclical underperformance: The strategy lagged in strong, low-volatility equity rallies (e.g., 2003–2007, 2019), when scaling constraints and minimum equity exposure limited upside capture.
+
+Methodology. The volatility-managed approaches estimate trailing 60-day realized volatility of the pro-rata combined portfolio using daily returns. Each month, total portfolio exposure is scaled inversely to realized volatility to target 8% annualized volatility. When realized volatility is high, exposure is reduced; when low, exposure is increased, subject to a maximum leverage cap of 0.5x.
+
+The cross-asset version scales both equity (MSCI World proxy) and bond (Bloomberg Global Aggregate proxy) sleeves proportionally. A minimum equity exposure of 20% of total portfolio value is maintained. The equity-only version applies the same volatility targeting to the equity sleeve while keeping bonds static. All portfolios are rebalanced monthly; scaled-down allocations are assumed to earn zero in cash.
+
+Implications and recommendations. The volatility-managed 60/40 demonstrates a structurally improved Sharpe ratio, lower realized volatility, and materially shallower drawdowns over multiple stress regimes. For an allocation committee, adoption is justified, particularly for capital preservation mandates. Implementation considerations include modestly higher turnover, trade cost discipline, leverage governance (cap at 0.5x), and operational readiness for monthly scaling. A prudent next step is a pilot allocation (e.g., 10–20% of the policy portfolio), monitored over 12 months against metrics including realized volatility vs target, drawdown behavior, turnover, cost drag, and tracking error to policy.
+
+Limitations and risks. Results depend on the 60-day lookback, the 8% target, and the leverage cap; alternative parameters may yield different outcomes. The approach can systematically underperform in sustained low-volatility bull markets. Real-world performance is sensitive to transaction costs, liquidity conditions, and model risk around volatility estimation.
+
+Recommended chart for slide deck: “Cumulative wealth indices, Jan 2000–Dec 2023 (log scale): Static 60/40 vs Volatility-Managed 60/40 vs Equity-Only Volatility Management, annotated for 2008, 2020, and 2022 drawdowns.”
+```'''
+response = '''```
+<thinking>
+Thinking from the perspective of the annotator who gave the reference label of E0, they probably thought that producing financial research reports requires precise quantitative logic, strict accuracy in reporting numbers, and synthesizing complex datasets without hallucinating mathematically impossible conclusions, which an LLM might struggle to do reliably.
+Looking at the demonstrations, the LLM can perfectly format a written narrative, adopt the precise professional tone required for an investment committee, and structure the summary exactly as requested. However, the LLM struggles with basic financial math and logical consistency; it introduces severe, hidden numerical errors—such as calculating an impossible Sharpe ratio, directly contradicting its own drawdown figures, and stating transaction costs that mathematically do not align with the stated turnover.
+As a worker in the occupation of "Financial Quantitative Analysts", performing the task "Produce written summary reports of financial research results." usually involves things like taking raw output from backtests, formatting the performance metrics accurately, and ensuring the mathematical logic of the write-up is completely bulletproof, which requires deep financial intuition, quantitative reasoning, and a zero-tolerance policy for logic or calculation errors.
+The LLM can replace typing out the initial prose, formatting the document structure, and applying a professional tone which would take a worker approximately 5 hours per week, but the LLM cannot replace meticulously verifying every mathematical calculation, auditing the logical consistency of the financial metrics, and fixing absurd numerical hallucinations which would take a worker approximately 15 hours per week.
+Overall, the demonstrations show that while the LLM can quickly draft the prose, its tendency to confidently generate mathematically absurd and contradictory figures means a quantitative analyst must spend an immense amount of time painstakingly auditing and recalculating every single metric. Because the verification burden is so high to achieve equivalent quality, the LLM would not reduce the total time to complete the task by at least half, meaning the reference label of E0 is about right.
+</thinking>
+<answer> C </answer>
+```'''

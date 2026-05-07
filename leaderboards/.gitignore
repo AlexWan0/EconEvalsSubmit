@@ -1,0 +1,11 @@
+__pycache__/
+data_old*/
+.DS_Store
+Dockerfile
+access.log
+app.log
+_d5_input_raw.txt
+_d5_iput.csv
+_parse.ipynb
+*.ipynb
+*.md

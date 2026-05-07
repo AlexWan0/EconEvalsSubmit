@@ -1,0 +1,11 @@
+{
+    "model_args": {
+        "model_str": "together/Qwen/Qwen2.5-Coder-32B-Instruct",
+        "max_tokens": 16384,
+        "temperature": 0.0,
+        "num_workers": 32
+    },
+    "request_args": {
+        "rate_limit_rpm": 60
+    }
+}

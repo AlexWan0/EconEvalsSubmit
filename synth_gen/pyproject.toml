@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "synth_gen"
+version = "0.1.0"
+description = "Synthetic generation"
+authors = ["Alex"]
+packages = [
+    { include = "synth_gen" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+lm_prompts = { path = "./lm_prompts", develop = true }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

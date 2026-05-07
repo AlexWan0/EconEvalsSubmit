@@ -1,0 +1,8 @@
+{
+    "model_args": {
+        "model_str": "google/gemini-2.5-flash",
+        "max_tokens": 16384,
+        "temperature": 0.0,
+        "num_workers": 64
+    }
+}
