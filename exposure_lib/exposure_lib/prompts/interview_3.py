@@ -30,6 +30,25 @@ _SYSTEM_PROMPT_2 = _SYSTEM_PROMPT_DEFAULT + "\n\n" + """
 In this turn, the interviewer will ask you about "{category_task}". This is a task that you often perform. Here is a more detailed task description: "{task_detailed}"
 """.strip() # used for injecting info about the more detialed task description
 
+_SYSTEM_PROMPT_3 = _SYSTEM_PROMPT_DEFAULT + "\n\n" + """
+At a certain point the interviewer will ask you to enter in information about the steps it takes to perform the task, along with time estimates and time-savings, into a computer system. To not break character, you can do so by responding with a formatted set of XML tags. You should enter the information for each step it takes to perform the task in the following format:
+<steps>
+<step>
+<description>
+[one-sentence description of the step, starting with "I need to..."]
+</description>
+<time_without_chatbot>
+[the amount of time the step takes without using a chatbot, including units (e.g., seconds, minutes, hours)]
+</time_without_chatbot>
+<time_saved_with_chatbot>
+[the amount of time that would be saved by using a chatbot, including units (e.g., seconds, minutes, hours)]
+</time_saved_with_chatbot>
+</step>
+[repeat for each step]
+</steps>
+
+You MUST follow this format exactly to avoid breaking character.
+""".strip()
 
 INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN: list[dict] = [
     {
@@ -99,7 +118,7 @@ INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN: list[dict] = [
 
     {
         "role": "user",
-        "content": "Ok, so I'll just pull up the demonstration...\n\n<demo>\n<prompt>\n{query}\n</prompt>\n<response>\n{response}\n</response>\n</demo>\n\nImagine yourself back in the moment when you were performing the task yesterday. Please take me through that again, but this time you should also imagine that you have access to a chatbot on your phone or computer with these capabilities. Note that the chatbot only has text capabilities. Also, remember that this prompt is just for demonstration purposes - it's possible that none of it, all of it, or only some of it is actually useful in-practice. As you walk me through the steps of how you performed the task, you should also think about whether you can or can't use the chatbot. Make sure to think out loud! Say things like \'Hmmm... I wonder if I could then pull out my phone and type into the chatbot...\' or \'I wonder if I could navigate to the chatbot website and...\'. You MUST imagine very concretely how you would use a chatbot to assist with tasks. Make sure to verbalize both when using a chatbot seems weird or unnatural and when it would be helpful."
+        "content": "Ok, so I'll just pull up the demonstration...\n\n<demo>\n<prompt>\n{query}\n</prompt>\n<response>\n{response}\n</response>\n</demo>\n\nImagine yourself back in the moment when you were performing the task yesterday. Please take me through that again, but this time you should also imagine that you have access to a chatbot on your phone or computer with these capabilities. Note that the chatbot only has text capabilities. Also, remember that this prompt is just for demonstration purposes - it's possible that none of it, all of it, or only some of it is actually useful in-practice. As you walk me through the steps of how you performed the task, you should also think about whether, most of the time, you reasonably can or can't use the chatbot in the moment for each step. Only consider chatbot usage that plays a central, necessary role in completing the step, not marginal or low-impact uses, and provides substantive assistance beyond what can be done with a computer otherwise or another existing non-AI tool. Make sure to think out loud! Say things like \'Hmmm... I wonder if I could then pull out my phone and type into the chatbot...\' or \'I wonder if I could navigate to the chatbot website and...\'. You MUST imagine very concretely how you would use a chatbot to assist with tasks. Make sure to verbalize both when using a chatbot seems weird or unnatural and when it would be helpful."
     },
 
     # {
@@ -123,5 +142,22 @@ INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN: list[dict] = [
     {
         "role": "assistant",
         "content": {'system': _SYSTEM_PROMPT_DEFAULT}
+    },
+
+    {
+        "role": "user",
+        "content": "Thanks! Just one last thing. Can you now enter the information from earlier about the steps it takes to perform the task, along with the time estimates and time-savings, into our computer system so that we can keep track of it? For each step it takes to perform the task, please enter the following information: (1) a one-sentence description of the step, starting with \"I need to...\" in the \"description\" field (keep these to one sentence but make sure it's detailed enough that someone else outside this conversation could understand it), (2) the amount of time the step takes without using a chatbot in the \"time_without_chatbot\" field, and (3) the amount of time that would be saved by using a chatbot in the \"time_saved_with_chatbot\" field. Make sure to include the units for the time estimates (e.g., seconds, minutes, hours). For the time estimates and time-savings, please provide specific, numeric values (and not ranges or, for examle, \"a couple minutes\"). Finally, make sure that each step is a distinct activity and that the time/time-savings you report for each step is only for that step and not for multiple steps combined (you may need to divide up some of the times to do this)."
+    },
+
+    {
+        "role": "assistant",
+        "content": {
+            'system': _SYSTEM_PROMPT_3
+        },
+        "meta": {
+            "llm_args": {
+                "model_name": "openai/gpt-5.4-mini@reasoning_effort=low",
+            }
+        }
     },
 ]

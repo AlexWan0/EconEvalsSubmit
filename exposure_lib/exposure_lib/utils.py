@@ -7,6 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Callable, TypeVar, TypedDict
 import re
+import os
 
 import pandas as pd
 from fast_openai import RequestArgs, run_auto, run_auto_str
@@ -554,3 +555,21 @@ def save_pickle_gzip(obj: object, filepath: str) -> None:
 def read_pickle_gzip(filepath: str) -> object:
     with gzip.open(filepath, "rb") as f:
         return pickle.load(f)
+
+def cached_xlsx_df(url: str, **kwargs) -> pd.DataFrame:
+    cache_dir = kwargs.pop("cache_dir", ".cache/")
+    Path(cache_dir).mkdir(parents=True, exist_ok=True)
+
+    # Create a deterministic filename based on URL + kwargs
+    key = url + str(sorted(kwargs.items()))
+    filename = hashlib.md5(key.encode("utf-8")).hexdigest() + ".xlsx"
+    filepath = os.path.join(cache_dir, filename)
+
+    # Download and cache if not already present
+    if not os.path.exists(filepath):
+        df = pd.read_excel(url, **kwargs)
+        df.to_excel(filepath, index=False)
+        return df
+
+    # Load from cache
+    return pd.read_excel(filepath, **kwargs)

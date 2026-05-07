@@ -10,10 +10,12 @@ from exposure_lib.prompts.interview import (
     PROMPT_INTERVIEW_BINARIZE_CAT,
     PROMPT_INTERVIEW_BINARIZE_CAT10,
     INTERVIEW_BETA_MAP_SPAN,
-    PROMPT_INTERVIEW_BINARIZE_SPAN
+    PROMPT_INTERVIEW_BINARIZE_SPAN,
+    PROMPT_INTERVIEW_MATCH_ACTIVITIES_TO_TASKS,
 )
 from exposure_lib.scoring_newsyn_ret_int import InterviewArgs
 from exposure_lib.utils import read_pickle_gzip
+from dataclasses import replace
 
 
 def _select_prompt(version: str) -> list[dict]:
@@ -40,7 +42,38 @@ def _select_prompt(version: str) -> list[dict]:
 
         return INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN
 
+    if version == 'v4_span':
+        from exposure_lib.prompts.interview_3 import INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN
+
+        return INTERVIEW_BASE_PROMPT_MESSAGE_TEMPLATE_SPAN
+
     raise ValueError(f"Unsupported prompt version: {version}")
+
+
+def _apply_prompt_version_setting(args, prompt_version):
+    """
+    Apply scoring behavior that is tied to a specific prompt version.
+
+    v4_span reuses the v3 interview but adds an activity-to-task matching LLM
+    preprocessing step before the final categorization prompt.
+    """
+    if prompt_version == "v4_span":
+        args.result_processor_prompt_template = PROMPT_INTERVIEW_MATCH_ACTIVITIES_TO_TASKS
+        args.result_processor_llm_args = replace(
+            args.interview_llm_args,
+            model_name='openai/gpt-5.4-mini@reasoning_effort=low',
+            max_tokens=100_000
+        )
+        args.score_map = INTERVIEW_BETA_MAP_SPAN
+        args.use_manual_activity_task_scoring = True
+        args.output_col = args.manual_score_col
+    elif prompt_version in {"v1", "v2", "v2_span", "v3_span"}:
+        args.result_processor_prompt_template = ""
+        args.use_manual_activity_task_scoring = False
+    else:
+        raise ValueError(f"Unsupported prompt version: {prompt_version}")
+
+    return args
 
 
 def _load_interview_input(input_path: str) -> pd.DataFrame:

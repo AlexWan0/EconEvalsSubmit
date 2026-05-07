@@ -18,6 +18,7 @@ from exposure_lib.scripts_utils import (
     _ensure_query_convo_subset,
     _load_interview_input,
     _load_llm_args_list,
+    _apply_prompt_version_setting,
     _select_prompt,
 )
 from synth_gen.background_generation import BackgroundGenArgs, generate_backgrounds
@@ -198,6 +199,7 @@ def main() -> None:
             ),
         )
         _apply_categorize_setting(interview_args, args.categorize_setting)
+        _apply_prompt_version_setting(interview_args, args.prompt_version)
 
         scored_df = run_interview_scoring(
             background_df_with_response,

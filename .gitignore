@@ -222,7 +222,11 @@ __marimo__/
 .cache/
 .test_scripts/
 .vscode/
-data/
+# Ignore data directories anywhere in the repo
+**/data/**
+
+# Large local dataset checkout (not versioned)
+EconEvalsONET-Data/
 docs/
 __pycache__/
 experiments/
